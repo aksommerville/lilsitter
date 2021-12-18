@@ -6,7 +6,7 @@ Carry the children to the goal and don't kill them.
 
 ## TODO
 
-- [ ] Editor: Visual editing.
+- [x] Editor: Visual editing.
 - [ ] Final maps, say about fifty of them?
 - [ ] Sound effects
 - [ ] Music
@@ -22,5 +22,5 @@ Carry the children to the goal and don't kill them.
 - - [ ] Other kids?
 - - [x] Moving platform
 - - [ ] Some kind of horizontal hazard, for chimney edges
-- [ ] Editor: Maybe clean up the CSS just a little?
+- [x] Editor: Maybe clean up the CSS just a little?
 - [ ] make: Avoid mixing PNG and TSV splashes. Better strategy re data files (as opposed to embedded data)

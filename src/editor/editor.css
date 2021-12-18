@@ -1,0 +1,23 @@
+body {
+  background-color: #222;
+  color: #fff;
+}
+
+.outerRow {
+  display: flex;
+  flex-direction: row;
+}
+
+.highlight {
+  background-color: #ff0;
+  color: #000;
+}
+
+input.parameter {
+  width: 5em;
+  margin-right: 1em;
+}
+
+canvas {
+  margin: 1em;
+}
