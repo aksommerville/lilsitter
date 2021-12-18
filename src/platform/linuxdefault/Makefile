@@ -21,8 +21,8 @@ linuxdefault_OFILES+=$(patsubst mid/data/%.c,$(linuxdefault_MIDDIR)/data/%.o,$(D
 $(linuxdefault_MIDDIR)/%.o:src/%.c;$(PRECMD) $(linuxdefault_CC) -o $@ $<
 $(linuxdefault_MIDDIR)/data/%.o:mid/data/%.c;$(PRECMD) $(linuxdefault_CC) -o $@ $<
 
-$(linuxdefault_EXE):$(linuxdefault_OFILES);$(PRECMD) $(linuxdefault_LD) -o $@ $^ $(linuxdefault_LDPOST)
-RUNCMD=$< --files=$(linuxdefault_OUTDIR)/files
+$(linuxdefault_EXE):$(linuxdefault_OFILES) data;$(PRECMD) $(linuxdefault_LD) -o $@ $(linuxdefault_OFILES) $(linuxdefault_LDPOST)
+RUNCMD=$< --files=out/data
 
 #linuxdefault_DATA:=$(patsubst src/data/raw/%,$(linuxdefault_OUTDIR)/files/%,$(DATA_SRCFILES_RAW))
 #$(linuxdefault_OUTDIR)/files/%:src/data/raw/%;$(PRECMD) cp $< $@

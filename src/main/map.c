@@ -49,6 +49,8 @@ static void map_validate() {
       case MAP_CMD_DUMMY: REQUIRE(3) break;
       case MAP_CMD_CROCBOT: REQUIRE(2) break;
       case MAP_CMD_PLATFORM: REQUIRE(3) break;
+      case MAP_CMD_SHREDDER: REQUIRE(4) break;
+      case MAP_CMD_BALLOON: REQUIRE(2) break;
       default: {
           p--;
           ma_log("ERROR: Unknown map command 0x%02x. Terminating map at byte %d.\n",map[p],p);
@@ -95,7 +97,7 @@ void fill_rect(uint8_t *dst,int8_t x,int8_t y,int8_t w,int8_t h,uint8_t pixel) {
 }
 
 /* Draw goal.
- * It's always a lone round rect.
+ * It's always a lone round rect, unless it touches the screen edge.
  * Bottom edge may be outlined or stippled depending on (solid).
  */
  
@@ -104,37 +106,50 @@ static void draw_goal(uint8_t *dst,uint8_t x,uint8_t y,uint8_t w,uint8_t h,uint8
   if ((w<4)||(h<4)) {
     fill_rect(dst,x,y,w,h,solid?0xff:0xdb);
   } else {
-    // Outline in black, skipping the corners.
-    if (solid) {
+    // Outline in black, skipping the corners, unless it touches an edge.
+    uint8_t square_outline=0;
+    if (!solid) {
+      // If one-way, it always has 3 borders, even at screen edges.
+      fill_rect(dst,x+1,y,w-2,1,0x00);
+      fill_rect(dst,x,y+1,1,h-1,0x00);
+      fill_rect(dst,x+w-1,y+1,1,h-1,0x00);
+      x++; y++; w-=2; h-=1;
+    } else if ((x<1)||(y<1)||(x+w>=96)||(y+h>=64)) {
+      square_outline=1;
+    } else {
       fill_rect(dst,x+1,y,w-2,1,0x00);
       fill_rect(dst,x+1,y+h-1,w-2,1,0x00);
       fill_rect(dst,x,y+1,1,h-2,0x00);
       fill_rect(dst,x+w-1,y+1,1,h-2,0x00);
       x++; y++; w-=2; h-=2;
-    } else {
-      fill_rect(dst,x+1,y,w-2,1,0x00);
-      fill_rect(dst,x,y+1,1,h-1,0x00);
-      fill_rect(dst,x+w-1,y+1,1,h-1,0x00);
-      x++; y++; w-=2; h-=1;
     }
     // Dark gray and white checks on the remainder.
     uint8_t color0=0xff;
-    while (h>0) {
+    uint8_t yi=y,hi=h;
+    while (hi>0) {
       if (color0==0xff) color0=0x49; else color0=0xff;
       uint8_t rowh=2;
-      if (rowh>h) rowh=h;
+      if (rowh>hi) rowh=hi;
       uint8_t xi=w;
       uint8_t color=color0;
       while (xi>=2) {
-        fill_rect(dst,x+w-xi,y,2,rowh,color);
+        fill_rect(dst,x+w-xi,yi,2,rowh,color);
         if (color==0xff) color=0x49; else color=0xff;
         xi-=2;
       }
       if (xi) {
-        fill_rect(dst,x+w-xi,y,1,rowh,color);
+        fill_rect(dst,x+w-xi,yi,1,rowh,color);
       }
-      y+=rowh;
-      h-=rowh;
+      yi+=rowh;
+      hi-=rowh;
+    }
+    // If we skipped outlines due to screen edge, go back and fill in the non-edge ones.
+    // We do sharp corners in this case.
+    if (square_outline) {
+      if (x>0) fill_rect(dst,x,y,1,h,0x00);
+      if (y>0) fill_rect(dst,x,y,w,1,0x00);
+      if (x+w<96) fill_rect(dst,x+w-1,y,1,h,0x00);
+      if (y+h<64) fill_rect(dst,x,y+h-1,w,1,0x00);
     }
   }
 }
@@ -246,6 +261,8 @@ void map_draw(uint8_t *dst,uint8_t *scratch) {
       case MAP_CMD_DUMMY: src+=3; break;
       case MAP_CMD_CROCBOT: src+=2; break;
       case MAP_CMD_PLATFORM: src+=3; break;
+      case MAP_CMD_SHREDDER: src+=4; break;
+      case MAP_CMD_BALLOON: src+=2; break;
       default: goto _done_;
     }
     goal=0;

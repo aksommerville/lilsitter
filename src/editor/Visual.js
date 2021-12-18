@@ -105,6 +105,32 @@ export class Visual {
           context.setLineDash([]);
         } break;
         
+      case "SHREDDER": {
+          let dstx = command[1] * SCALE - 16;
+          const dsty = command[2] * SCALE;
+          const dsth = command[4] * SCALE;
+          const srcx = 256;
+          const srcy = 0;
+          if (highlight) {
+            context.fillStyle = "#ff0";
+            context.fillRect(dstx - 1, dsty - 1, 34, dsth + 2);
+          }
+          if (command[3] === 1) {
+            context.scale(-1,1);
+            dstx = -dstx - 32;
+          }
+          for (let y=dsty; ; y+=16) {
+            context.drawImage(spritesImage, srcx, srcy + 8, 32, 16, dstx, y, 32, 16);
+            if (y + 32 > dsty + dsth) break;
+          }
+          if (command[3] === 1) {
+            context.scale(-1,1);
+            dstx = -dstx - 32;
+          }
+          context.drawImage(spritesImage, srcx, srcy, 32, 8, dstx, dsty, 32, 8);
+          context.drawImage(spritesImage, srcx, srcy + 24, 32, 8, dstx, dsty + dsth - 8, 32, 8);
+        } break;
+        
       default: if (isSpriteCommandName(opname)) {
           const dstx = command[1] * SCALE - 16;
           const dsty = command[2] * SCALE - 32;
@@ -117,6 +143,7 @@ export class Visual {
             case "DUMMY": srcx = 160; break;
             case "CROCBOT": srcx = 192; break;
             case "PLATFORM": srcx = 224; break;
+            case "BALLOON": srcx = 288; break;
           }
           if (highlight) {
             context.fillStyle = "#ff0";

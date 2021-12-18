@@ -28,7 +28,11 @@ extern struct ma_texture tex_sprites_60; // crocbot...
 extern struct ma_texture tex_sprites_61;
 extern struct ma_texture tex_sprites_62;
 extern struct ma_texture tex_sprites_63;
+extern struct ma_texture tex_sprites_64; // shredder...
+extern struct ma_texture tex_sprites_65;
+extern struct ma_texture tex_sprites_66;
 extern struct ma_texture tex_sprites_70; // floating platform
+extern struct ma_texture tex_sprites_71; // balloon
 
 struct sprite spritev[SPRITE_LIMIT];
 uint8_t spritec=0;
@@ -207,6 +211,39 @@ void spawn_sprites() {
           src+=3;
         } break;
         
+      case MAP_CMD_SHREDDER: {
+          if (sprite=spawn()) {
+            sprite->type=SPRITE_TYPE_SHREDDER;
+            sprite->w=8;
+            sprite->h=src[3];
+            if (sprite->h<16) sprite->h=16;
+            sprite->x=src[0]-4;
+            sprite->y=src[1]; // y is the top, unlike most sprites
+            sprite->visible=1;
+            sprite->physics=0;
+            sprite->mobile=0;
+            sprite->gravity=0;
+            sprite->vs8[0]=src[2];
+          }
+          src+=4;
+        } break;
+        
+      case MAP_CMD_BALLOON: {
+          if (sprite=spawn()) {
+            sprite->type=SPRITE_TYPE_BALLOON;
+            sprite->w=8;
+            sprite->h=8;
+            sprite->x=src[0]-(sprite->w>>1);
+            sprite->y=src[1]-sprite->h;
+            sprite->visible=1;
+            sprite->physics=1;
+            sprite->mobile=1;
+            sprite->gravity=0;
+            sprite->texture=&tex_sprites_71;
+          }
+          src+=2;
+        } break;
+        
       default: return;
     }
     goal=0;
@@ -216,6 +253,14 @@ void spawn_sprites() {
 /* Kill sprite.
  */
  
+static uint8_t sprite_produces_gore(struct sprite *sprite) {
+  switch (sprite->type) {
+    case SPRITE_TYPE_BALLOON:
+      return 0;
+  }
+  return 1;
+}
+ 
 static void kill_sprite(struct sprite *victim,struct sprite *assailant) {
 
   // Confirm it really is killable.
@@ -223,6 +268,7 @@ static void kill_sprite(struct sprite *victim,struct sprite *assailant) {
     case SPRITE_TYPE_HERO:
     case SPRITE_TYPE_DUMMY:
     case SPRITE_TYPE_SUSIE:
+    case SPRITE_TYPE_BALLOON:
       break;
     default: return;
   }
@@ -241,7 +287,9 @@ static void kill_sprite(struct sprite *victim,struct sprite *assailant) {
     }
   }
   
-  map_add_gore(victim->x,victim->y,victim->w,victim->h);
+  if (sprite_produces_gore(victim)) {
+    map_add_gore(victim->x,victim->y,victim->w,victim->h);
+  }
   victim->visible=0;
   victim->physics=0;
   victim->dead=1;
@@ -255,20 +303,24 @@ static void pickup(struct sprite *sprite,uint16_t input) {
 
   // Confirm we have head room.
   // Don't abort just yet. If we're pointing up, a pumpkin would trip this condition.
+  // Do abort if we are within 8 pixels of the top edge: Picking up simply not possible.
   struct sprite *headblock=0;
-  struct sprite *q=spritev;
-  uint8_t i=spritec;
-  for (;i-->0;q++) {
-    if (q==sprite) continue;
-    if (!q->physics) continue;
-    if (q->dead) continue;
-    if (q->type==SPRITE_TYPE_ONEWAY) continue;
-    if (q->x+q->w<=sprite->x) continue;
-    if (q->y+q->h<=sprite->y-8) continue;
-    if (q->x>=sprite->x+sprite->w) continue;
-    if (q->y>=sprite->y) continue;
-    headblock=q;
-    break;
+  if (!(input&MA_BUTTON_UP)) {
+    if (sprite->y<8) return;
+    struct sprite *q=spritev;
+    uint8_t i=spritec;
+    for (;i-->0;q++) {
+      if (q==sprite) continue;
+      if (!q->physics) continue;
+      if (q->dead) continue;
+      if (q->type==SPRITE_TYPE_ONEWAY) continue;
+      if (q->x+q->w<=sprite->x) continue;
+      if (q->y+q->h<=sprite->y-8) continue;
+      if (q->x>=sprite->x+sprite->w) continue;
+      if (q->y>=sprite->y) continue;
+      headblock=q;
+      break;
+    }
   }
   
   // Measure the pumpkin patch.
@@ -291,13 +343,16 @@ static void pickup(struct sprite *sprite,uint16_t input) {
   // Find a pumpkin in the patch.
   // If there's more than one, take the one with more overlap.
   struct sprite *pumpkin=0;
+  struct sprite *q=spritev;
   uint8_t score=0;
-  for (q=spritev,i=spritec;i-->0;q++) {
+  uint8_t i=spritec;
+  for (;i-->0;q++) {
     if (!q->visible) continue;
     if (q->dead) continue;
     switch (q->type) {
       case SPRITE_TYPE_DUMMY:
       case SPRITE_TYPE_SUSIE:
+      case SPRITE_TYPE_BALLOON:
         break;
       default: continue;
     }
@@ -365,7 +420,7 @@ static void toss(struct sprite *sprite,uint16_t input) {
     sprite->y-=pumpkin->h;
     pumpkin->y=sprite->y+sprite->h;
   } else {
-    pumpkin->y=sprite->y-pumpkin->h;
+    pumpkin->y=sprite->y-pumpkin->h+4;
     if (sprite->xform&MA_XFORM_XREV) {
       pumpkin->x-=pumpkin->w;
       if (input&MA_BUTTON_LEFT) {
@@ -390,6 +445,11 @@ static void toss(struct sprite *sprite,uint16_t input) {
  */
  
 static void update_hero(struct sprite *sprite,uint16_t input) {
+
+  // If carrying a balloon, float up every other frame.
+  if ((sprite->vs8[0]&3)&&(sprite->vs8[4]>=0)&&(sprite->vs8[4]<spritec)&&(spritev[sprite->vs8[4]].type==SPRITE_TYPE_BALLOON)) {
+    sprite->y--;
+  }
 
   // Animate walking.
   sprite->vs8[0]++;
@@ -462,11 +522,34 @@ static void update_hero(struct sprite *sprite,uint16_t input) {
  * vs8[5]=animation frame
  */
  
+static uint8_t susie_has_nose_room(const struct sprite *sprite) {
+  uint8_t x,y=sprite->y,w=4,h=sprite->h;
+  if (sprite->vs8[0]>0) {
+    x=sprite->x+sprite->w;
+  } else {
+    x=sprite->x-w;
+  }
+  if (x<0) return 0;
+  if (x>96-w) return 0;
+  const struct sprite *q=spritev;
+  uint8_t i=spritec;
+  for (;i-->0;q++) {
+    if (!q->physics) continue;
+    if (q->x>=x+w) continue;
+    if (q->y>=y+h) continue;
+    if (q->x+q->w<=x) continue;
+    if (q->y+q->h<=y) continue;
+    return 0;
+  }
+  return 1;
+}
+ 
 static void update_susie(struct sprite *sprite) {
 
   // If we're being carried, stop doing things.
   if (!sprite->physics) {
     sprite->texture=&tex_sprites_10;
+    sprite->vs8[1]=0;
     return;
   }
 
@@ -474,8 +557,12 @@ static void update_susie(struct sprite *sprite) {
   if (sprite->vs8[1]>0) {
     sprite->vs8[1]--;
     if (!sprite->vs8[1]) {
-      sprite->vs8[0]=-sprite->vs8[0];
-      sprite->xform^=MA_XFORM_XREV;
+      if (susie_has_nose_room(sprite)) {
+        // Don't change anything, try to keep walking.
+      } else {
+        sprite->vs8[0]=-sprite->vs8[0];
+        sprite->xform^=MA_XFORM_XREV;
+      }
     }
     return;
   }
@@ -663,6 +750,46 @@ static void update_platform(struct sprite *sprite) {
   }
 }
 
+/* Shredder.
+ * vs8[0]=orient
+ * vs8[1]=counter
+ */
+ 
+static void update_shredder(struct sprite *sprite) {
+  sprite->vs8[1]++;
+  
+  int8_t w=sprite->x;
+  int8_t e=w+(sprite->w>>1);
+  int8_t n=sprite->y;
+  int8_t s=sprite->y+sprite->h;
+  if (sprite->vs8[0]==1) {
+    w+=sprite->w>>1;
+    e+=sprite->w>>1;
+  }
+  struct sprite *victim=spritev;
+  uint8_t i=spritec;
+  for (;i-->0;victim++) {
+    if (!victim->visible) continue;
+    if (victim->x>=e) continue;
+    if (victim->y>=s) continue;
+    if (victim->x+victim->w<=w) continue;
+    if (victim->y+victim->h<=n) continue;
+    kill_sprite(victim,sprite);
+  }
+}
+
+/* Balloon.
+ * vs8[0]=float up counter
+ */
+ 
+static void update_balloon(struct sprite *sprite) {
+  sprite->vs8[0]++;
+  if (sprite->vs8[0]>=5) {
+    sprite->vs8[0]=0;
+    sprite->y--;
+  }
+}
+
 /* With the sprite logic all applied, now detect and correct collisions. 
  * Returns nonzero if anything changed.
  */
@@ -831,6 +958,8 @@ void update_sprites(uint16_t input) {
       case SPRITE_TYPE_FIRE: update_fire(sprite); break;
       case SPRITE_TYPE_CROCBOT: update_crocbot(sprite); break;
       case SPRITE_TYPE_PLATFORM: update_platform(sprite); break;
+      case SPRITE_TYPE_SHREDDER: update_shredder(sprite); break;
+      case SPRITE_TYPE_BALLOON: update_balloon(sprite); break;
     }
     
     if (sprite->mobile&&sprite->gravity) sprite->y++;
@@ -919,6 +1048,36 @@ void draw_sprites(struct ma_framebuffer *dst) {
           ma_blit(dst,sprite->x+8,sprite->y,&tex_sprites_70,MA_XFORM_XREV);
           uint8_t radius=((sprite->vs8[3]>>2)&3)+1;
           ma_framebuffer_fill_rect(dst,sprite->x+8-radius,sprite->y+sprite->h+1,radius<<1,1,0x00);
+        } break;
+        
+      case SPRITE_TYPE_SHREDDER: {
+          int8_t y,h;
+          uint8_t x,xform;
+          // blades:
+          if (sprite->vs8[0]==1) {
+            x=sprite->x+2;
+            xform=MA_XFORM_XREV;
+          } else {
+            x=sprite->x-2;
+            xform=0;
+          }
+          for (y=sprite->y+(sprite->vs8[1]&15);;y+=12) {
+            if (y+8>sprite->y+sprite->h) break;
+            ma_blit(dst,x,y,&tex_sprites_66,xform);
+          }
+          for (y=sprite->y+sprite->h-8-(sprite->vs8[1]&15);;y-=12) {
+            if (y<sprite->y) break;
+            ma_blit(dst,x,y,&tex_sprites_66,xform|MA_XFORM_YREV);
+          }
+          // rail:
+          ma_blit(dst,sprite->x,sprite->y,&tex_sprites_65,0);
+          ma_blit(dst,sprite->x,sprite->y+sprite->h-8,&tex_sprites_65,0);
+          for (y=sprite->y+8,h=sprite->h-16;h>0;y+=8,h-=8) {
+            ma_blit(dst,sprite->x,y,&tex_sprites_65,0);
+          }
+          // feet:
+          ma_blit(dst,sprite->x,sprite->y,&tex_sprites_64,MA_XFORM_YREV);
+          ma_blit(dst,sprite->x,sprite->y+sprite->h-8,&tex_sprites_64,0);
         } break;
         
       default: if (sprite->texture) {

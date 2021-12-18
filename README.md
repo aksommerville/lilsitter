@@ -21,7 +21,9 @@ Carry the children to the goal and don't kill them.
 - - [x] Electric crocodile
 - - [ ] Other kids?
 - - [x] Moving platform
-- - [ ] Some kind of horizontal hazard, for chimney edges
+- - [x] Some kind of horizontal hazard, for chimney edges
+- - [x] Balloon
 - [x] Editor: Maybe clean up the CSS just a little?
 - [x] make: Avoid mixing PNG and TSV splashes. Better strategy re data files (as opposed to embedded data)
-- [ ] Ensure Susie starts travelling the direction she was facing, when tossed.
+- [x] Ensure Susie starts travelling the direction she was facing, when tossed.
+- [x] Don't draw outline on GOAL SOLID if it touches the screen edge.

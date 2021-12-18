@@ -147,6 +147,7 @@ static int ma_ld_mangle_path(char *dst,int dsta,const char *src) {
   if (!src) return -1;
   while (*src=='/') src++;
   if (!*src) return -1;
+  if (!memcmp(src,"Sitter/",7)) src+=7;
   int dstc=snprintf(dst,dsta,"%s/%s",ma_ld_file_sandbox,src);
   if ((dstc<1)||(dstc>=dsta)) return -1;
   return dstc;

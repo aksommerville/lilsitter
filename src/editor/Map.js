@@ -17,6 +17,8 @@ export const COMMANDS = [
   ["DUMMY","x","y","tileid"],
   ["CROCBOT","x","y"],
   ["PLATFORM","x","y","mode"],
+  ["SHREDDER","x","y","orient","h"],
+  ["BALLOON","x","y"],
 ];
 
 export function isSpriteCommandName(name) {
@@ -28,6 +30,8 @@ export function isSpriteCommandName(name) {
     case "DUMMY":
     case "CROCBOT":
     case "PLATFORM":
+    case "SHREDDER":
+    case "BALLOON":
       return true;
   }
   return false;
@@ -102,6 +106,7 @@ export class Map {
       switch (opname) {
         case "SOLID": if (box(command[1], command[2], command[3], command[4])) matched = command; break;
         case "ONEWAY": if (box(command[1], command[2] - 1, command[3], 3)) matched = command; break;
+        case "SHREDDER": if (box(command[1], command[2], 8, command[4])) matched = command; break;
         default: if (isSpriteCommandName(opname)) {
             // Sprites can be any size, but this editor renders them all 32x32, ie 8x8 game pixels.
             if (box(command[1] - 4, command[2] - 8, 8, 8)) matched = command;
@@ -151,7 +156,11 @@ export class Map {
           this.broadcast();
         } return true;
       case "ONEWAY": {
-          command[1] = Math.min(255, Math.max(0, command[1] + dx));
+          command[3] = Math.min(255, Math.max(0, command[3] + dx));
+          this.broadcast();
+        } return true;
+      case "SHREDDER": {
+          command[4] = Math.min(255, Math.max(0, command[4] + dy));
           this.broadcast();
         } return true;
     }
@@ -226,6 +235,8 @@ export class Map {
       case "DUMMY": cmd[1] = 48; cmd[2] = 36; break;
       case "CROCBOT": cmd[1] = 48; cmd[2] = 36; break;
       case "PLATFORM": cmd[1] = 48; cmd[2] = 36; break;
+      case "SHREDDER": cmd[1] = 48; cmd[2] = 24; cmd[4] = 16; break;
+      case "BALLOON": cmd[1] = 48; cmd[2] = 36; break;
     }
     
     this.commands.push(cmd);

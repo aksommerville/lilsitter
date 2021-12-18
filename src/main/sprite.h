@@ -20,6 +20,8 @@ struct ma_texture;
 #define SPRITE_TYPE_FIRE     5
 #define SPRITE_TYPE_CROCBOT  6
 #define SPRITE_TYPE_PLATFORM 7
+#define SPRITE_TYPE_SHREDDER 8
+#define SPRITE_TYPE_BALLOON  9
 
 #define SPRITE_CONSTRAINT_N   0x01
 #define SPRITE_CONSTRAINT_W   0x02
