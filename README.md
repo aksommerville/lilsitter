@@ -11,7 +11,7 @@ Carry the children to the goal and don't kill them.
 - [ ] Sound effects
 - [ ] Music
 - [x] Hero: Arms and up/down feedback
-- [ ] Intro splash with high score and music toggle
+- [x] Intro splash with high score and music toggle
 - [x] Timekeeping
 - [x] High score
 - [x] Nicer game over splashes, eg stats on Win.

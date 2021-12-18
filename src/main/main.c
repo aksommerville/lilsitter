@@ -14,6 +14,11 @@ extern struct ma_font font_basic;
 #define GAME_END_TIMEOUT 60 /* Terminal condition must remain stable for so long before game over. */
 #define SPLASH_MINIMUM_TIME 30
 
+#define SPLASH_INTRO     1
+#define SPLASH_WIN       2
+#define SPLASH_LOSE      3
+#define SPLASH_ALLWIN    4
+
 static ma_pixel_t fb_storage[96*64];
 static struct ma_framebuffer fb={
   .w=96,
@@ -35,6 +40,13 @@ static int8_t completion_status=0; // counts away from zero when the game is fin
 static uint8_t splash=0; // if positive, counts up to SPLASH_MINIMUM_TIME
 static uint8_t splash_input_zero=0; // nonzero if all inputs have dropped during the splash -- requirement for dismissal
 static uint8_t splash_input_one=0; // splash ends when inputs released
+static uint8_t splash_selection=0; // SPLASH_* or zero if playing
+static uint8_t music_enable=1;
+static uint8_t songid=0;
+static uint16_t pvinput=0;
+
+static uint8_t song[4096];
+static uint16_t songc=0;
 
 // All times are in frames and don't count splash time.
 // Convert to minute:second.milli for display only.
@@ -50,7 +62,49 @@ static struct bba_synth synth={0};
  
 int16_t audio_next() {
   return bba_synth_update(&synth);
-  return 0;
+}
+
+/* Begin song.
+ */
+ 
+static void restart_music() {
+  bba_synth_play_song(&synth,0,0);
+  bba_synth_quiet(&synth);
+  if (!music_enable) return; // Don't bother loading it; toggling also calls this and reloads
+  char path[64];
+  snprintf(path,sizeof(path),"/Sitter/song/%03d.bba",songid);
+  int32_t err=ma_file_read(song,sizeof(song),path,0);
+  if (err<=0) {
+    songc=0;
+    return;
+  }
+  songc=err;
+  bba_synth_play_song(&synth,song,songc);
+}
+
+static void set_song(uint8_t id) {
+  if (songid==id) return;
+  songid=id;
+  restart_music();
+}
+
+/* Turn music on or off.
+ */
+ 
+static void toggle_music() {
+  if (music_enable) {
+    music_enable=0;
+    bba_synth_play_song(&synth,0,0);
+    bba_synth_quiet(&synth);
+  } else {
+    music_enable=1;
+    restart_music();
+  }
+  // Redraw the "OFF", "ON" bit in bgbits. Cheat...
+  if (splash&&(splash_selection==SPLASH_INTRO)) {
+    ma_framebuffer_fill_rect(&bgbits,42,36,20,7,0xa4);
+    ma_font_render(&bgbits,42,36,&font_basic,music_enable?"ON":"OFF",-1,0x1f);
+  }
 }
 
 /* Render scene.
@@ -81,46 +135,87 @@ static int format_time(char *dst,int dsta,const char *label,uint32_t framec) {
 /* Load splash.
  */
  
-static void begin_splash(const char *path,int sethi) {
+static void begin_splash(uint8_t which) {
   splash=1;
   splash_input_zero=0;
   splash_input_one=0;
+  splash_selection=which;
+  
+  const char *path="";
+  switch (which) {
+    case SPLASH_INTRO: path="/Sitter/splash/intro.tsv"; break;
+    case SPLASH_WIN: path="/Sitter/splash/win.tsv"; break;
+    case SPLASH_LOSE: path="/Sitter/splash/lose.tsv"; break;
+    case SPLASH_ALLWIN: path="/Sitter/splash/allwin.tsv"; break;
+  }
   
   if (ma_file_read(bgbits.v,96*64,path,0)!=96*64) {
     memset(bgbits.v,0x00,96*64);
   }
   
-  uint32_t record_time;
+  /* Update high scores if we do that.
+   */
+  uint32_t record_time=HIGH_SCORE_UNSET;
   uint8_t highlight_best=0;
-  if (mapid) {
-    record_time=get_high_score(mapid-1);
-    if (sethi&&(level_time<record_time)) {
-      save_high_score(mapid-1,level_time);
-      highlight_best=1;
-      record_time=level_time;
-    }
-  } else {
-    record_time=get_high_score(-1);
-    if (sethi&&(total_time<record_time)) {
-      save_high_score(-1,total_time);
-      highlight_best=1;
-      record_time=total_time;
-    }
+  switch (which) {
+    case SPLASH_WIN: {
+        record_time=get_high_score(mapid-1);
+        if (level_time<record_time) {
+          save_high_score(mapid-1,level_time);
+          record_time=level_time;
+          highlight_best=1;
+        }
+      } break;
+    case SPLASH_LOSE: {
+        record_time=get_high_score(mapid-1);
+      } break;
+    case SPLASH_ALLWIN: {
+        record_time=get_high_score(-1);
+        if (total_time<record_time) {
+          save_high_score(-1,total_time);
+          record_time=total_time;
+          highlight_best=1;
+        }
+      } break;
+    case SPLASH_INTRO: {
+        record_time=get_high_score(-1);
+      } break;
   }
   
+  /* Draw the various decorations.
+   */
   char buf[64];
-  int bufc=format_time(buf,sizeof(buf),"Level",level_time);
-  ma_font_render(&bgbits,14,19,&font_basic,buf,bufc,0x7b);
-  bufc=format_time(buf,sizeof(buf),"Total",total_time);
-  ma_font_render(&bgbits,14,27,&font_basic,buf,bufc,0x7b);
-  bufc=format_time(buf,sizeof(buf)," Best",record_time);
-  ma_font_render(&bgbits,14,35,&font_basic,buf,bufc,highlight_best?0x1f:0x7b);
+  uint8_t bufc;
+  switch (which) {
+    case SPLASH_WIN:
+    case SPLASH_LOSE:
+    case SPLASH_ALLWIN: {
+        bufc=format_time(buf,sizeof(buf),"Level",level_time);
+        ma_font_render(&bgbits,14,19,&font_basic,buf,bufc,0x7b);
+        bufc=format_time(buf,sizeof(buf),"Total",total_time);
+        ma_font_render(&bgbits,14,27,&font_basic,buf,bufc,0x7b);
+        bufc=format_time(buf,sizeof(buf)," Best",record_time);
+        ma_font_render(&bgbits,14,35,&font_basic,buf,bufc,highlight_best?0x1f:0x7b);
+      } break;
+    case SPLASH_INTRO: {
+        bufc=snprintf(buf,sizeof(buf),"Music: %s",music_enable?"ON":"OFF");
+        ma_font_render(&bgbits,14,36,&font_basic,buf,bufc,0x1f);
+        if (record_time<HIGH_SCORE_UNSET) {
+          bufc=format_time(buf,sizeof(buf),"Best",record_time);
+          ma_font_render(&bgbits,14,46,&font_basic,buf,bufc,0xfc);
+        }
+      } break;
+  }
 }
 
 static void end_splash() {
-  splash=0;
-  level_time=0;
-  map_draw(bgbits.v,fb.v);
+  if (splash_selection==SPLASH_ALLWIN) {
+    begin_splash(SPLASH_INTRO);
+  } else {
+    splash=0;
+    level_time=0;
+    map_draw(bgbits.v,fb.v);
+  }
 }
 
 /* Check if the level is won or lost.
@@ -187,7 +282,7 @@ static void check_completion() {
 static void lose_level() {
   failc++;
   total_time+=level_time;
-  begin_splash("/Sitter/splash/lose.tsv",0);
+  begin_splash(SPLASH_LOSE);
   completion_status=0;
   map_load(mapid);
   spawn_sprites();
@@ -199,10 +294,10 @@ static void win_level() {
   completion_status=0;
   
   if (map_load(++mapid)) {
-    begin_splash("/Sitter/splash/win.tsv",1);
+    begin_splash(SPLASH_WIN);
   } else {
     map_load(mapid=0);
-    begin_splash("/Sitter/splash/allwin.tsv",-1);
+    begin_splash(SPLASH_ALLWIN);
     valid_time=0;
     total_time=0;
     failc=0;
@@ -215,6 +310,14 @@ static void win_level() {
  
 void loop() {
   uint16_t input=ma_update();
+  
+  if (input!=pvinput) {
+    if (splash&&(splash_selection==SPLASH_INTRO)) {
+      if ((input&MA_BUTTON_UP)&&!(pvinput&MA_BUTTON_UP)) toggle_music();
+      if ((input&MA_BUTTON_DOWN)&&!(pvinput&MA_BUTTON_DOWN)) toggle_music();
+    }
+    pvinput=input;
+  }
   
   if (splash) {
     if (!input) splash_input_zero=1;
@@ -256,9 +359,9 @@ void setup() {
 
   srand(millis());
 
-  //TODO intro splash
+  set_song(2);
+  begin_splash(SPLASH_INTRO);
   mapid=0;
   map_load(mapid);
-  map_draw(bgbits.v,fb.v);
   spawn_sprites();
 }

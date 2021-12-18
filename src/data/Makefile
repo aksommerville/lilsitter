@@ -17,6 +17,11 @@ DATA_SPLASH_DST:=$(DATA_SPLASH_SRC:.png=.tsv)
 all:$(DATA_SPLASH_DST)
 src/data/raw/Sitter/splash/%.tsv:src/data/raw/Sitter/splash/%.png $(EXE_mktsv);$(PRECMD) $(EXE_mktsv) -o$@ $< -s8
 
+DATA_SONG_SRC:=$(filter src/data/raw/Sitter/song/%.mid,$(DATA_SRCFILES_RAW))
+DATA_SONG_DST:=$(DATA_SONG_SRC:.mid=.bba)
+all:$(DATA_SONG_DST)
+src/data/raw/Sitter/song/%.bba:src/data/raw/Sitter/song/%.mid;$(PRECMD) ../bb/out/linux-default/beepbot mid2bba -o$@ $<
+
 # DATA_SRCFILES: Inputs that require some kind of pre-processing.
 DATA_SRCFILES:=$(DATA_SRCFILES_IMAGE) $(DATA_SRCFILES_FONT) $(DATA_SRCFILES_SONG) $(DATA_SRCFILES_SOUND)
 
