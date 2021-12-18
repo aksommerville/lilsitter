@@ -47,6 +47,8 @@ static void map_validate() {
       case MAP_CMD_SUSIE: REQUIRE(2) break;
       case MAP_CMD_FIRE: REQUIRE(2) break;
       case MAP_CMD_DUMMY: REQUIRE(3) break;
+      case MAP_CMD_CROCBOT: REQUIRE(2) break;
+      case MAP_CMD_PLATFORM: REQUIRE(3) break;
       default: {
           p--;
           ma_log("ERROR: Unknown map command 0x%02x. Terminating map at byte %d.\n",map[p],p);
@@ -242,6 +244,8 @@ void map_draw(uint8_t *dst,uint8_t *scratch) {
       case MAP_CMD_SUSIE: src+=2; break;
       case MAP_CMD_FIRE: src+=2; break;
       case MAP_CMD_DUMMY: src+=3; break;
+      case MAP_CMD_CROCBOT: src+=2; break;
+      case MAP_CMD_PLATFORM: src+=3; break;
       default: goto _done_;
     }
     goal=0;

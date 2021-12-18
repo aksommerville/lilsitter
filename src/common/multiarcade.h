@@ -89,7 +89,7 @@ void ma_send_framebuffer(const void *fb);
  * from some externally-configured sandbox for native builds.
  */
 int32_t ma_file_read(void *dst,int32_t dsta,const char *path,int32_t seek);
-int32_t ma_file_write(const char *path,const void *src,int32_t srcc);
+int32_t ma_file_write(const char *path,const void *src,int32_t srcc,int32_t seek);
 
 /* Arduino functions that we imitate if needed.
  **************************************************************/

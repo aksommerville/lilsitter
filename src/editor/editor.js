@@ -20,6 +20,8 @@ const COMMANDS = [
   ["SUSIE",   0x09,  2], // (x,y)
   ["FIRE",    0x0a,  2], // (x,y)
   ["DUMMY",   0x0b,  3], // (x,y,tileid)
+  ["CROCBOT", 0x0c,  2], // (x,y)
+  ["PLATFORM",0x0d,  3], // (x,y,mode)
 ];
  
 const MAP_CMD_EOF           = 0x00;
@@ -34,6 +36,8 @@ const MAP_CMD_DESMOND       = 0x08;
 const MAP_CMD_SUSIE         = 0x09;
 const MAP_CMD_FIRE          = 0x0a;
 const MAP_CMD_DUMMY         = 0x0b;
+const MAP_CMD_CROCBOT       = 0x0c;
+const MAP_CMD_PLATFORM      = 0x0d;
  
 class Map {
   constructor(bin) {
@@ -67,6 +71,8 @@ class Map {
         case MAP_CMD_SUSIE: cmd("SUSIE", 2); break;
         case MAP_CMD_FIRE: cmd("FIRE", 2); break;
         case MAP_CMD_DUMMY: cmd("DUMMY", 3); break;
+        case MAP_CMD_CROCBOT: cmd("CROCBOT", 2); break;
+        case MAP_CMD_PLATFORM: cmd("PLATFORM", 3); break;
         default: throw new Error(`Unknown command ${u8s[p-1]}`);
       }
     }
@@ -197,7 +203,9 @@ function drawMap(map) { // Map
       case "DESMOND":
       case "SUSIE": 
       case "FIRE": 
-      case "DUMMY": {
+      case "DUMMY": 
+      case "CROCBOT":
+      case "PLATFORM": {
           const dstx = command[1] * VISUAL_SCALE;
           const dsty = command[2] * VISUAL_SCALE;
           let srcx = 0;
@@ -208,6 +216,8 @@ function drawMap(map) { // Map
             case "SUSIE": srcx = 64; break;
             case "FIRE": srcx = 96; break;
             case "DUMMY": srcx = 128; break;
+            case "CROCBOT": srcx = 160; break;
+            case "PLATFORM": srcx=192; break;
           }
           context.drawImage(spritesImage, srcx, srcy, 32, 32, dstx - 16, dsty - 32, 32, 32);
         } break;

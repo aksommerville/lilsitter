@@ -7,18 +7,20 @@ Carry the children to the goal and don't kill them.
 ## TODO
 
 - [ ] Editor: Visual editing.
-- [ ] Editor: Maybe clean up the CSS just a little?
-- [ ] make: Avoid mixing PNG and TSV splashes. Better strategy re data files (as opposed to embedded data)
+- [ ] Final maps, say about fifty of them?
 - [ ] Sound effects
 - [ ] Music
-- [ ] Intro splash: music toggle
-- [ ] Timekeeping
-- [ ] High score
-- [ ] Nicer game over splashes, eg stats on Win.
-- [ ] All-over splash
+- [x] Hero: Arms and up/down feedback
+- [ ] Intro splash with high score and music toggle
+- [x] Timekeeping
+- [x] High score
+- [x] Nicer game over splashes, eg stats on Win.
+- [x] All-over splash
 - [ ] Menu card
 - [ ] More sprites:
-- - [ ] Electric crocodile
+- - [x] Electric crocodile
 - - [ ] Other kids?
-- - [ ] Moving platform
-- [ ] Final maps
+- - [x] Moving platform
+- - [ ] Some kind of horizontal hazard, for chimney edges
+- [ ] Editor: Maybe clean up the CSS just a little?
+- [ ] make: Avoid mixing PNG and TSV splashes. Better strategy re data files (as opposed to embedded data)

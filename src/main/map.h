@@ -28,6 +28,8 @@ extern uint8_t map[MAP_SIZE_LIMIT];
 #define MAP_CMD_SUSIE          0x09 /* (u8 x,u8 y) */
 #define MAP_CMD_FIRE           0x0a /* (u8 x,u8 y) */
 #define MAP_CMD_DUMMY          0x0b /* (u8 x,u8 y,u8 tileid) */
+#define MAP_CMD_CROCBOT        0x0c /* (u8 x,u8 y) */
+#define MAP_CMD_PLATFORM       0x0d /* (u8 x,u8 y,u8 mode: (0,1,2)=(still,horz,vert)) */
 
 /* Map ids are sequential from zero, and the file name is derived from it.
  * Returns >0 if loaded, 0 if not found or malformed.

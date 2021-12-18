@@ -48,6 +48,7 @@ int16_t ma_font_render(
   const char *src,int16_t srcc,
   ma_pixel_t pixel
 ) {
+  if (!src) srcc=0; else if (srcc<0) { srcc=0; while (src[srcc]) srcc++; }
   int16_t rtn=0;
   for (;srcc-->0;src++) {
   

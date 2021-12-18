@@ -18,6 +18,8 @@ struct ma_texture;
 #define SPRITE_TYPE_SOLID    3
 #define SPRITE_TYPE_ONEWAY   4
 #define SPRITE_TYPE_FIRE     5
+#define SPRITE_TYPE_CROCBOT  6
+#define SPRITE_TYPE_PLATFORM 7
 
 #define SPRITE_CONSTRAINT_N   0x01
 #define SPRITE_CONSTRAINT_W   0x02
@@ -33,6 +35,7 @@ extern struct sprite {
   uint8_t physics;
   uint8_t mobile;
   uint8_t target;
+  uint8_t gravity;
   uint8_t dead;
   int8_t dx,dy; // most recent move
   int8_t pvx,pvy;

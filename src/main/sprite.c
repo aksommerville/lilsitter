@@ -7,10 +7,16 @@ extern struct ma_texture tex_sprites_01;
 extern struct ma_texture tex_sprites_10; // susie...
 extern struct ma_texture tex_sprites_11;
 extern struct ma_texture tex_sprites_12;
-extern struct ma_texture tex_sprites_20; // head
+extern struct ma_texture tex_sprites_20; // head...
+extern struct ma_texture tex_sprites_21;
+extern struct ma_texture tex_sprites_22;
 extern struct ma_texture tex_sprites_30; // torso...
 extern struct ma_texture tex_sprites_31;
 extern struct ma_texture tex_sprites_32;
+extern struct ma_texture tex_sprites_33; // arms...
+extern struct ma_texture tex_sprites_34;
+extern struct ma_texture tex_sprites_35;
+extern struct ma_texture tex_sprites_36; // raised arms
 extern struct ma_texture tex_sprites_40; // fire...
 extern struct ma_texture tex_sprites_41;
 extern struct ma_texture tex_sprites_42;
@@ -18,6 +24,11 @@ extern struct ma_texture tex_sprites_50; // turnip
 extern struct ma_texture tex_sprites_51; // tomato
 extern struct ma_texture tex_sprites_52; // pumpkin
 extern struct ma_texture tex_sprites_53; // cabbage
+extern struct ma_texture tex_sprites_60; // crocbot...
+extern struct ma_texture tex_sprites_61;
+extern struct ma_texture tex_sprites_62;
+extern struct ma_texture tex_sprites_63;
+extern struct ma_texture tex_sprites_70; // floating platform
 
 struct sprite spritev[SPRITE_LIMIT];
 uint8_t spritec=0;
@@ -32,6 +43,7 @@ static struct sprite *spawn() {
   }
   struct sprite *sprite=spritev+spritec++;
   memset(sprite,0,sizeof(struct sprite));
+  sprite->gravity=1;
   return sprite;
 }
 
@@ -160,6 +172,39 @@ void spawn_sprites() {
             }
           }
           src+=2;
+        } break;
+        
+      case MAP_CMD_CROCBOT: {
+          if (sprite=spawn()) {
+            sprite->type=SPRITE_TYPE_CROCBOT;
+            sprite->w=16;
+            sprite->h=5;
+            sprite->x=src[0]-12;
+            sprite->y=src[1]-sprite->h;
+            sprite->visible=1;
+            sprite->physics=1;
+            sprite->mobile=0;
+          }
+          src+=2;
+        } break;
+        
+      case MAP_CMD_PLATFORM: {
+          if (sprite=spawn()) {
+            sprite->type=SPRITE_TYPE_PLATFORM;
+            sprite->w=16;
+            sprite->h=6;
+            sprite->x=src[0]-8;
+            sprite->y=src[1]-8;
+            sprite->visible=1;
+            sprite->physics=1;
+            sprite->mobile=1;
+            sprite->gravity=0;
+            switch (src[2]) {
+              case 1: sprite->vs8[0]=1; break;
+              case 2: sprite->vs8[1]=1; break;
+            }
+          }
+          src+=3;
         } break;
         
       default: return;
@@ -341,6 +386,7 @@ static void toss(struct sprite *sprite,uint16_t input) {
  * vs8[2]=jump time available
  * vs8[3]=previous input
  * vs8[4]=pumpkin index
+ * vs8[5]=head (0,1,2)=(normal,down,up)
  */
  
 static void update_hero(struct sprite *sprite,uint16_t input) {
@@ -352,6 +398,11 @@ static void update_hero(struct sprite *sprite,uint16_t input) {
     sprite->vs8[1]++;
     sprite->vs8[1]&=3;
   }
+  
+  // Point head in the proper direction.
+  if (input&MA_BUTTON_UP) sprite->vs8[5]=2;
+  else if (input&MA_BUTTON_DOWN) sprite->vs8[5]=1;
+  else sprite->vs8[5]=0;
 
   // Walk left or right, or reset animation.
   if (input&MA_BUTTON_LEFT) {
@@ -516,6 +567,102 @@ static void update_fire(struct sprite *sprite) {
   }
 }
 
+/* Crocbot.
+ * vs8[0]=delay
+ * vs8[1]=phase: 0=wait, 1=raise, 2=waithi, 3=chomp
+ * vs8[2]=extension
+ */
+ 
+static void update_crocbot(struct sprite *sprite) {
+  if (sprite->vs8[0]>0) {
+    sprite->vs8[0]--;
+  } else switch (sprite->vs8[1]) {
+    case 0: {
+        sprite->vs8[1]=1;
+      } break;
+    case 1: {
+        if (sprite->vs8[2]<16) {
+          sprite->vs8[2]++;
+          sprite->vs8[0]=2;
+          sprite->y--;
+        } else {
+          sprite->vs8[1]=2;
+          sprite->vs8[0]=90;
+        }
+      } break;
+    case 2: {
+        sprite->vs8[1]=3;
+      } break;
+    case 3: {
+        if (sprite->vs8[2]>0) {
+          sprite->vs8[2]-=2;
+          sprite->y+=2;
+        } else {
+          sprite->vs8[1]=0;
+          sprite->vs8[0]=60;
+        }
+      } break;
+  }
+  // Look for victims.
+  if (sprite->vs8[1]!=1) {
+    struct sprite *victim=spritev;
+    uint8_t i=spritec;
+    for (;i-->0;victim++) {
+      if (!victim->visible) continue;
+      if (!victim->mobile) continue;
+      if (victim->x>=sprite->x+sprite->w) continue;
+      if (victim->x+victim->w<=sprite->x) continue;
+      int8_t dy=victim->y-sprite->h-sprite->y;
+      if (dy<0) continue;
+      if (dy>2) continue;
+      kill_sprite(victim,sprite);
+    }
+  }
+}
+
+/* Platform.
+ * vs8[0]=dx
+ * vs8[1]=dy
+ * vs8[2]=still time
+ * vs8[3]=counter for animation
+ */
+ 
+static void update_platform(struct sprite *sprite) {
+  sprite->vs8[3]++;
+
+  // Anything mobile resting on my head, move it too.
+  // But use my physics-checked (dx,dy) instead of the optimistic (vs8[0,1]).
+  // Also, don't do this when moving up; physics takes care of that.
+  if (sprite->dx||(sprite->dy>0)) {
+    struct sprite *passenger=spritev;
+    uint8_t i=spritec;
+    for (;i-->0;passenger++) {
+      if (!passenger->mobile) continue;
+      if (passenger->x>=sprite->x+sprite->w) continue;
+      if (passenger->x+passenger->w<=sprite->x) continue;
+      int8_t dy=passenger->y+passenger->h-sprite->y;
+      if ((dy<-1)||(dy>1)) continue;
+      passenger->x+=sprite->dx;
+      passenger->y+=sprite->dy;
+    }
+  }
+
+  sprite->x+=sprite->vs8[0];
+  sprite->y+=sprite->vs8[1];
+  
+  if (!sprite->dx&&!sprite->dy) {
+    if (sprite->vs8[2]<30) {
+      sprite->vs8[2]++;
+    } else {
+      sprite->vs8[2]=0;
+      sprite->vs8[0]*=-1;
+      sprite->vs8[1]*=-1;
+    }
+  } else {
+    sprite->vs8[2]=0;
+  }
+}
+
 /* With the sprite logic all applied, now detect and correct collisions. 
  * Returns nonzero if anything changed.
  */
@@ -615,6 +762,10 @@ static uint8_t rectify_collisions(uint8_t seed) {
         b->constraint|=acon;
       } else if (b->constraint&bcon) {
         a->constraint|=bcon;
+      } else if (a->type==SPRITE_TYPE_PLATFORM) {
+        bdx=-adx; adx=0;
+        bdy=-ady; ady=0;
+      } else if (b->type==SPRITE_TYPE_PLATFORM) {
       } else if (a->type==SPRITE_TYPE_HERO) {
         bdx=-adx; adx=0;
         bdy=-ady; ady=0;
@@ -678,9 +829,11 @@ void update_sprites(uint16_t input) {
       case SPRITE_TYPE_HERO: update_hero(sprite,input); break;
       case SPRITE_TYPE_SUSIE: update_susie(sprite); break;
       case SPRITE_TYPE_FIRE: update_fire(sprite); break;
+      case SPRITE_TYPE_CROCBOT: update_crocbot(sprite); break;
+      case SPRITE_TYPE_PLATFORM: update_platform(sprite); break;
     }
     
-    if (sprite->mobile) sprite->y++;
+    if (sprite->mobile&&sprite->gravity) sprite->y++;
     
     sprite->dx=sprite->x-sprite->pvx;
     sprite->dy=sprite->y-sprite->pvy;
@@ -720,12 +873,52 @@ void draw_sprites(struct ma_framebuffer *dst) {
             case 2: ma_blit(dst,sprite->x,y+4,&tex_sprites_30,sprite->xform); break;
             case 3: ma_blit(dst,sprite->x,y+4,&tex_sprites_32,sprite->xform); break;
           }
-          ma_blit(dst,sprite->x,y,&tex_sprites_20,sprite->xform);
-          if ((sprite->vs8[4]>=0)&&(sprite->vs8[4]<spritec)) {
+          switch (sprite->vs8[5]) { // head
+            case 0: ma_blit(dst,sprite->x,y,&tex_sprites_20,sprite->xform); break;
+            case 1: ma_blit(dst,sprite->x,y,&tex_sprites_21,sprite->xform); break;
+            case 2: ma_blit(dst,sprite->x,y,&tex_sprites_22,sprite->xform); break;
+          }
+          if ((sprite->vs8[4]>=0)&&(sprite->vs8[4]<spritec)) { // pumpkin and raised arm
             struct sprite *pumpkin=spritev+sprite->vs8[4];
             ma_blit(dst,sprite->x,y-pumpkin->h,pumpkin->texture,pumpkin->xform|MA_XFORM_YREV);
-            //TODO arms
+            ma_blit(dst,sprite->x,y,&tex_sprites_36,sprite->xform);
+          } else switch (sprite->vs8[1]) { // idle or walking arms
+            case 0: ma_blit(dst,sprite->x,y+4,&tex_sprites_33,sprite->xform); break;
+            case 1: ma_blit(dst,sprite->x,y+4,&tex_sprites_34,sprite->xform); break;
+            case 2: ma_blit(dst,sprite->x,y+4,&tex_sprites_33,sprite->xform); break;
+            case 3: ma_blit(dst,sprite->x,y+4,&tex_sprites_35,sprite->xform); break;
           }
+        } break;
+        
+      case SPRITE_TYPE_CROCBOT: {
+          if (sprite->vs8[2]>8) { // rail
+            ma_blit(dst,sprite->x+8,sprite->y-11+sprite->vs8[2],&tex_sprites_63,0);
+          }
+          if (sprite->vs8[2]>1) { // rail
+            ma_blit(dst,sprite->x+8,sprite->y-3+sprite->vs8[2],&tex_sprites_63,0);
+          }
+          ma_blit(dst,sprite->x+8,sprite->y-3+sprite->vs8[2],&tex_sprites_62,0); // foot
+          // little dot on the foot to suggestion rotation of a gear
+          if (sprite->vs8[2]&&((sprite->vs8[1]==1)||(sprite->vs8[1]==3))) {
+            uint8_t subx=12,suby=2;
+            switch (sprite->vs8[2]&0x06) {
+              case 2: subx++; break;
+              case 4: subx++; suby++; break;
+              case 6: suby++; break;
+            }
+            dst->v[(sprite->y+sprite->vs8[2]+suby)*96+sprite->x+subx]=0x2c;
+          } else if (sprite->vs8[2]) {
+            dst->v[(sprite->y+sprite->vs8[2]+2)*96+sprite->x+12]=0x2c;
+          }
+          ma_blit(dst,sprite->x,sprite->y-3,&tex_sprites_60,0); // jaw
+          ma_blit(dst,sprite->x+8,sprite->y-3,&tex_sprites_61,0); // head
+        } break;
+        
+      case SPRITE_TYPE_PLATFORM: {
+          ma_blit(dst,sprite->x,sprite->y,&tex_sprites_70,0);
+          ma_blit(dst,sprite->x+8,sprite->y,&tex_sprites_70,MA_XFORM_XREV);
+          uint8_t radius=((sprite->vs8[3]>>2)&3)+1;
+          ma_framebuffer_fill_rect(dst,sprite->x+8-radius,sprite->y+sprite->h+1,radius<<1,1,0x00);
         } break;
         
       default: if (sprite->texture) {
