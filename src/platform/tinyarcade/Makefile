@@ -45,7 +45,7 @@ TINY_BIN_HOSTED:=out/$(PROJECT_NAME)-hosted.bin
 TINY_PACKAGE:=out/$(PROJECT_NAME).zip
 
 TINY_SRCFILES:= \
-  $(CFILES_COMMON) $(CFILES_MAIN) $(HFILES_MAIN) $(DATA_DSTFILES) \
+  $(CFILES_COMMON) $(CFILES_MAIN) $(HFILES_MAIN) $(DATA_MIDFILES_EMBED) \
   src/common/multiarcade.h \
   src/common/bba.h \
   $(shell find src/platform/tinyarcade -name '*.[ch]') \
@@ -103,12 +103,11 @@ launch:$(TINY_BIN_SOLO); \
   $(MA_PKGROOT)/arduino/tools/bossac/1.7.0-arduino3/bossac -i -d --port=$(MA_PORT) -U true -i -e -w $(TINY_BIN_SOLO) -R
   
 # I guess a README would be nice, too.
-$(TINY_PACKAGE):$(TINY_BIN_HOSTED) $(DATA_TSV) $(DATA_SRCFILES_RAW);$(PRECMD) \
+$(TINY_PACKAGE):$(TINY_BIN_HOSTED) $(DATA_INCLUDE_FILES);$(PRECMD) \
   rm -rf out/$(PROJECT_NAME) ; \
   mkdir out/$(PROJECT_NAME) || exit 1 ; \
-  cp $(DATA_TSV) out/$(PROJECT_NAME)/$(PROJECT_NAME).tsv || exit 1 ; \
+  cp -r out/data/* out/$(PROJECT_NAME) || exit 1 ; \
   cp $(TINY_BIN_HOSTED) out/$(PROJECT_NAME)/$(PROJECT_NAME).bin || exit 1; \
-  if [ -n "$(DATA_SRCFILES_RAW)" ] ; then cp -r $(DATA_SRCFILES_RAW) out/$(PROJECT_NAME) ; fi ; \
   cd out ; \
   zip -r $(PROJECT_NAME).zip $(PROJECT_NAME) >/dev/null || exit 1 ; \
   rm -r $(PROJECT_NAME)

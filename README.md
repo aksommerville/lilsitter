@@ -16,11 +16,12 @@ Carry the children to the goal and don't kill them.
 - [x] High score
 - [x] Nicer game over splashes, eg stats on Win.
 - [x] All-over splash
-- [ ] Menu card
+- [x] Menu card
 - [ ] More sprites:
 - - [x] Electric crocodile
 - - [ ] Other kids?
 - - [x] Moving platform
 - - [ ] Some kind of horizontal hazard, for chimney edges
 - [x] Editor: Maybe clean up the CSS just a little?
-- [ ] make: Avoid mixing PNG and TSV splashes. Better strategy re data files (as opposed to embedded data)
+- [x] make: Avoid mixing PNG and TSV splashes. Better strategy re data files (as opposed to embedded data)
+- [ ] Ensure Susie starts travelling the direction she was facing, when tossed.

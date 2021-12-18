@@ -2,7 +2,7 @@
 
 TOOL_CC:=gcc -c -MMD -O2 -Isrc/tool -Werror -Wimplicit
 TOOL_LD:=gcc
-TOOL_LDPOST:=-lz
+TOOL_LDPOST:=-lz -lm
 TOOL_EXESFX:=
 
 TOOL_MIDDIR:=mid/tool

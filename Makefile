@@ -9,7 +9,7 @@ include src/tool/Makefile
 all:tools
 
 include src/data/Makefile
-data:$(DATA_DSTFILES) $(DATA_TSV)
+data:$(DATA_MIDFILES_EMBED) $(DATA_INCLUDE_FILES)
 all:data
 
 include src/test/Makefile
@@ -18,7 +18,7 @@ test-%:$(TEST_EXES);MA_TEST_FILTER="$*" etc/tool/testrunner.sh $(TEST_EXES)
 
 ifneq (,$(MA_BUILD_TINY))
   include src/platform/tinyarcade/Makefile
-  tiny:$(TINY_BIN_SOLO) $(TINY_BIN_HOSTED) $(DATA_TSV) $(TINY_PACKAGE)
+  tiny:$(TINY_BIN_SOLO) $(TINY_BIN_HOSTED) $(TINY_PACKAGE) data
   all:tiny
 endif
 

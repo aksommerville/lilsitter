@@ -15,7 +15,7 @@ linuxdefault_EXE:=$(linuxdefault_OUTDIR)/$(PROJECT_NAME)
 
 linuxdefault_CFILES:=$(shell find src/platform/linuxdefault -name '*.c') $(CFILES_COMMON) $(CFILES_MAIN)
 linuxdefault_OFILES:=$(patsubst src/%.c,$(linuxdefault_MIDDIR)/%.o,$(linuxdefault_CFILES))
-linuxdefault_OFILES+=$(patsubst mid/data/%.c,$(linuxdefault_MIDDIR)/data/%.o,$(DATA_DSTFILES))
+linuxdefault_OFILES+=$(patsubst mid/data/%.c,$(linuxdefault_MIDDIR)/data/%.o,$(DATA_MIDFILES_EMBED))
 -include $(linuxdefault_OFILES:.o=.d)
 
 $(linuxdefault_MIDDIR)/%.o:src/%.c;$(PRECMD) $(linuxdefault_CC) -o $@ $<
@@ -24,5 +24,5 @@ $(linuxdefault_MIDDIR)/data/%.o:mid/data/%.c;$(PRECMD) $(linuxdefault_CC) -o $@ 
 $(linuxdefault_EXE):$(linuxdefault_OFILES);$(PRECMD) $(linuxdefault_LD) -o $@ $^ $(linuxdefault_LDPOST)
 RUNCMD=$< --files=$(linuxdefault_OUTDIR)/files
 
-linuxdefault_DATA:=$(patsubst src/data/raw/%,$(linuxdefault_OUTDIR)/files/%,$(DATA_SRCFILES_RAW))
-$(linuxdefault_OUTDIR)/files/%:src/data/raw/%;$(PRECMD) cp $< $@
+#linuxdefault_DATA:=$(patsubst src/data/raw/%,$(linuxdefault_OUTDIR)/files/%,$(DATA_SRCFILES_RAW))
+#$(linuxdefault_OUTDIR)/files/%:src/data/raw/%;$(PRECMD) cp $< $@

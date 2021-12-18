@@ -12,7 +12,7 @@ generic_EXE:=$(generic_OUTDIR)/$(PROJECT_NAME)
 
 generic_CFILES:=$(shell find src/platform/generic -name '*.c') $(CFILES_COMMON) $(CFILES_MAIN)
 generic_OFILES:=$(patsubst src/%.c,$(generic_MIDDIR)/%.o,$(generic_CFILES))
-generic_OFILES+=$(patsubst mid/data/%.c,$(generic_MIDDIR)/data/%.o,$(DATA_DSTFILES))
+generic_OFILES+=$(patsubst mid/data/%.c,$(generic_MIDDIR)/data/%.o,$(DATA_MIDFILES_EMBED))
 -include $(generic_OFILES:.o=.d)
 
 $(generic_MIDDIR)/%.o:src/%.c;$(PRECMD) $(generic_CC) -o $@ $<
