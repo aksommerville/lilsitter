@@ -80,7 +80,7 @@ export class CommandList {
     // Find rows with no corresponding command, and remove them.
     for (const tr of table.querySelectorAll("tr.command")) {
       const command = this.findCommandForRow(tr);
-      if (!command) {
+      if (!command || (this.map.commands.indexOf(command) < 0)) {
         tr.remove();
       }
     }
@@ -216,7 +216,7 @@ export class CommandList {
   
   onAddCommand() {
     if (!this.map) return;
-    const message = `Opcode: ${COMMANDS.map((c) => c[0]).join(',')}`;
+    const message = `Opcode: ${COMMANDS.map((c) => c[0]).join(', ')}`;
     const opname = window.prompt(message);
     if (!opname) return;
     const command = this.map.addCommand(opname);
