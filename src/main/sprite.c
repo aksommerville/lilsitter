@@ -175,7 +175,7 @@ void spawn_sprites() {
               default: sprite->texture=&tex_sprites_50; break;
             }
           }
-          src+=2;
+          src+=3;
         } break;
         
       case MAP_CMD_CROCBOT: {
@@ -305,7 +305,7 @@ static void pickup(struct sprite *sprite,uint16_t input) {
   // Don't abort just yet. If we're pointing up, a pumpkin would trip this condition.
   // Do abort if we are within 8 pixels of the top edge: Picking up simply not possible.
   struct sprite *headblock=0;
-  if (!(input&MA_BUTTON_UP)) {
+  if (!(input&(MA_BUTTON_UP|MA_BUTTON_DOWN))) {
     if (sprite->y<8) return;
     struct sprite *q=spritev;
     uint8_t i=spritec;
@@ -435,6 +435,25 @@ static void toss(struct sprite *sprite,uint16_t input) {
   }
 }
 
+/* Am I standing on a platform?
+ * That's a case where (dy) could be nonzero, but we'd still want to restore jump power.
+ */
+ 
+static uint8_t hero_foot_neighbor_is_platform(const struct sprite *sprite) {
+  uint8_t y=sprite->y+sprite->h;
+  const struct sprite *q=spritev;
+  uint8_t i=spritec;
+  for (;i-->0;q++) {
+    int8_t dy=q->y-y;
+    if (dy<-1) continue;
+    if (dy>1) continue;
+    if (q->x>=sprite->x+sprite->w) continue;
+    if (q->x+q->w<=sprite->x) continue;
+    if (q->type==SPRITE_TYPE_PLATFORM) return 1;
+  }
+  return 0;
+}
+
 /* Update hero.
  * vs8[0]=animation counter
  * vs8[1]=animation frame
@@ -495,7 +514,7 @@ static void update_hero(struct sprite *sprite,uint16_t input) {
       else if (sprite->vs8[2]>5) sprite->y-=2;
       else sprite->y-=1; // -1 is effectively motionless
     }
-  } else if (sprite->dy) {
+  } else if ((sprite->dy>0)&&!hero_foot_neighbor_is_platform(sprite)) {
     sprite->vs8[2]=0;
   } else {
     sprite->vs8[2]=18; // Jump power.
@@ -727,6 +746,7 @@ static void update_platform(struct sprite *sprite) {
       if (!passenger->mobile) continue;
       if (passenger->x>=sprite->x+sprite->w) continue;
       if (passenger->x+passenger->w<=sprite->x) continue;
+      if (passenger->type==SPRITE_TYPE_PLATFORM) continue;
       int8_t dy=passenger->y+passenger->h-sprite->y;
       if ((dy<-1)||(dy>1)) continue;
       passenger->x+=sprite->dx;
@@ -860,18 +880,18 @@ static uint8_t rectify_collisions(uint8_t seed) {
         ady=penn;
         acon=SPRITE_CONSTRAINT_S;
         bcon=SPRITE_CONSTRAINT_N;
-      } else if ((penw<=pene)&&(penw<=pens)) {
-        adx=penw;
-        acon=SPRITE_CONSTRAINT_E;
-        bcon=SPRITE_CONSTRAINT_W;
-      } else if (pene<=pens) {
-        adx=-pene;
-        acon=SPRITE_CONSTRAINT_W;
-        bcon=SPRITE_CONSTRAINT_E;
-      } else {
+      } else if ((pens<=pene)&&(pens<=penw)) {
         ady=-pens;
         acon=SPRITE_CONSTRAINT_N;
         bcon=SPRITE_CONSTRAINT_S;
+      } else if (penw<=pene) {
+        adx=penw;
+        acon=SPRITE_CONSTRAINT_E;
+        bcon=SPRITE_CONSTRAINT_W;
+      } else {
+        adx=-pene;
+        acon=SPRITE_CONSTRAINT_W;
+        bcon=SPRITE_CONSTRAINT_E;
       }
       if ((a->constraint&acon)&&(b->constraint&bcon)) continue;
       
@@ -971,7 +991,7 @@ void update_sprites(uint16_t input) {
   
   // Rectify collisions.
   // Requires multiple passes to settle, yeah yeah the algorithm is imperfect...
-  uint8_t repc=4;
+  uint8_t repc=16;
   while ((repc-->0)&&rectify_collisions(repc)) ;
   
   // Set the final delta.

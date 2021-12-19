@@ -17,9 +17,9 @@ Carry the children to the goal and don't kill them.
 - [x] Nicer game over splashes, eg stats on Win.
 - [x] All-over splash
 - [x] Menu card
-- [ ] More sprites:
+- [x] More sprites:
 - - [x] Electric crocodile
-- - [ ] Other kids?
+- - [x] Other kids? ...nah 2 is plenty
 - - [x] Moving platform
 - - [x] Some kind of horizontal hazard, for chimney edges
 - - [x] Balloon
@@ -27,3 +27,5 @@ Carry the children to the goal and don't kill them.
 - [x] make: Avoid mixing PNG and TSV splashes. Better strategy re data files (as opposed to embedded data)
 - [x] Ensure Susie starts travelling the direction she was facing, when tossed.
 - [x] Don't draw outline on GOAL SOLID if it touches the screen edge.
+- [x] Down-pickup while head covered should work (disable check)
+

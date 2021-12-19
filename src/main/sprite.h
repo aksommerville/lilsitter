@@ -10,7 +10,7 @@ struct ma_framebuffer;
 struct ma_texture;
 
 // This can grow but never beyond 255.
-#define SPRITE_LIMIT 16
+#define SPRITE_LIMIT 32
 
 #define SPRITE_TYPE_DUMMY    0
 #define SPRITE_TYPE_HERO     1
