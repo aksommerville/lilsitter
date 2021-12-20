@@ -399,7 +399,7 @@ void setup() {
   srand(millis());
 
   begin_splash(SPLASH_INTRO);
-  mapid=20;//XXX
+  mapid=0;
   map_load(mapid);
   spawn_sprites();
 }

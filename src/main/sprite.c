@@ -3,6 +3,8 @@
 #include "map.h"
 #include "sound.h"
 
+#define HERO_JUMP_POWER 18
+
 extern struct ma_texture tex_sprites_00; // desmond...
 extern struct ma_texture tex_sprites_01;
 extern struct ma_texture tex_sprites_10; // susie...
@@ -532,16 +534,20 @@ static void update_hero(struct sprite *sprite,uint16_t input) {
   // Regular jump.
   } else if (input&MA_BUTTON_A) {
     if (sprite->vs8[2]>0) {
-      if (sprite->vs8[2]==18) sound_jump();
+      if (sprite->vs8[2]==HERO_JUMP_POWER) sound_jump();
       sprite->vs8[2]--;
       if (sprite->vs8[2]>10) sprite->y-=3;
       else if (sprite->vs8[2]>5) sprite->y-=2;
       else sprite->y-=1; // -1 is effectively motionless
     }
   } else if (sprite->dy<0) {
-    sprite->vs8[2]=0;
+    if (sprite_is_grounded(sprite,SPRITE_TYPE_PLATFORM)) {
+      sprite->vs8[2]=HERO_JUMP_POWER;
+    } else {
+      sprite->vs8[2]=0;
+    }
   } else if (sprite_is_grounded(sprite,-1)) {
-    sprite->vs8[2]=18; // Jump power.
+    sprite->vs8[2]=HERO_JUMP_POWER;
   } else {
     sprite->vs8[2]=0;
   }

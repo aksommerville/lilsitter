@@ -107,7 +107,8 @@ $(TINY_PACKAGE):$(TINY_BIN_HOSTED) $(DATA_INCLUDE_FILES);$(PRECMD) \
   rm -rf out/$(PROJECT_NAME) ; \
   mkdir out/$(PROJECT_NAME) || exit 1 ; \
   cp -r out/data/* out/$(PROJECT_NAME) || exit 1 ; \
-  cp $(TINY_BIN_HOSTED) out/$(PROJECT_NAME)/$(PROJECT_NAME).bin || exit 1; \
+  cp $(TINY_BIN_HOSTED) out/$(PROJECT_NAME)/$(PROJECT_NAME).bin || exit 1 ; \
+  rm -f out/$(PROJECT_NAME)/hiscore ; \
   cd out ; \
   zip -r $(PROJECT_NAME).zip $(PROJECT_NAME) >/dev/null || exit 1 ; \
   rm -r $(PROJECT_NAME)
