@@ -143,10 +143,22 @@ static void begin_splash(uint8_t which) {
   
   const char *path="";
   switch (which) {
-    case SPLASH_INTRO: path="/Sitter/splash/intro.tsv"; break;
-    case SPLASH_WIN: path="/Sitter/splash/win.tsv"; break;
-    case SPLASH_LOSE: path="/Sitter/splash/lose.tsv"; break;
-    case SPLASH_ALLWIN: path="/Sitter/splash/allwin.tsv"; break;
+    case SPLASH_INTRO: {
+        path="/Sitter/splash/intro.tsv";
+        set_song(1);
+      } break;
+    case SPLASH_WIN: {
+        path="/Sitter/splash/win.tsv";
+        set_song(2);
+      } break;
+    case SPLASH_LOSE: {
+        path="/Sitter/splash/lose.tsv";
+        set_song(3);
+      } break;
+    case SPLASH_ALLWIN: {
+        path="/Sitter/splash/allwin.tsv";
+        set_song(5);
+      } break;
   }
   
   if (ma_file_read(bgbits.v,96*64,path,0)!=96*64) {
@@ -212,6 +224,12 @@ static void end_splash() {
   if (splash_selection==SPLASH_ALLWIN) {
     begin_splash(SPLASH_INTRO);
   } else {
+    //set_song(4);//TODO song per map
+    switch (mapid%3) {
+      case 0: set_song(4); break;
+      case 1: set_song(6); break;
+      case 2: set_song(7); break;
+    }
     splash=0;
     level_time=0;
     map_draw(bgbits.v,fb.v);
@@ -359,7 +377,6 @@ void setup() {
 
   srand(millis());
 
-  set_song(2);
   begin_splash(SPLASH_INTRO);
   mapid=0;
   map_load(mapid);

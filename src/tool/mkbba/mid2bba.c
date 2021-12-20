@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
+#include <string.h>
 #include "common/encoder.h"
 #include "bb_midi.h"
 
@@ -16,6 +17,9 @@ struct mid2bba_context {
   struct bb_midi_file_reader *reader;
   int delay; // in frames, 256 frames per bba tick
   uint8_t chid;
+  int duration; // in ticks
+  int last_note_time; // ticks at the last note event
+  int last_note_dstc; // '' (dst.c), including the note event
 };
 
 static void mid2bba_context_cleanup(struct mid2bba_context *ctx) {
@@ -30,6 +34,7 @@ static void mid2bba_context_cleanup(struct mid2bba_context *ctx) {
  
 static int mid2bba_flush_delay(struct mid2bba_context *ctx) {
   int tickc=ctx->delay>>8;
+  ctx->duration+=tickc;
   ctx->delay&=0xff;
   while (tickc>=0x7f) {
     if (encode_u8(&ctx->dst,0x7f)<0) return -1;
@@ -59,6 +64,8 @@ static int mid2bba_emit_note(struct mid2bba_context *ctx,uint8_t chid,uint8_t no
 
   if (encode_u8(&ctx->dst,0x80|noteid)<0) return -1;
   if (encode_u8(&ctx->dst,velocity)<0) return -1;
+  ctx->last_note_time=ctx->duration;
+  ctx->last_note_dstc=ctx->dst.c;
 
   return 0;
 }
@@ -95,6 +102,43 @@ static int mid2bba_receive_delay(struct mid2bba_context *ctx,int tickc) {
   return 0;
 }
 
+/* After reencoding, examine the output:
+ *  - Remove any leading delay. At least one of my MIDIs has a silent bar at the start.
+ *  - Look for excessive trailing delay. Logic Pro X does this and I can't figure out why.
+ *    Beware that I'm not going to try to figure out where the bar ends.
+ *    Recommend drawing a note out to the very end of the last bar.
+ */
+ 
+static void mid2bba_trim_edge_delays(struct mid2bba_context *ctx) {
+  
+  // We've recorded the position of the last note. If there's a lot of time after that, trim it.
+  int trailing_delay=ctx->duration-ctx->last_note_time;
+  if (trailing_delay>=48) {
+    //fprintf(stderr,"%s: Trimming final delay of %d ticks (>1 second).\n",ctx->srcpath,trailing_delay);
+    ctx->duration=ctx->last_note_time;
+    ctx->dst.c=ctx->last_note_dstc;
+  }
+  
+  // Leading delay is pretty easy too.
+  int leading_delay=0;
+  int leadc=0;
+  while ((leadc<ctx->dst.c)&&!(ctx->dst.v[leadc]&0x80)) {
+    leading_delay+=ctx->dst.v[leadc];
+    leadc++;
+  }
+  if (leading_delay) {
+    //fprintf(stderr,"%s: Trimming leading delay of %d ticks.\n",ctx->srcpath);
+    ctx->dst.c-=leadc;
+    memmove(ctx->dst.v,ctx->dst.v+leadc,ctx->dst.c);
+    ctx->duration-=leading_delay;
+  }
+  
+  int sec=(ctx->duration+24)/48;
+  int min=sec/60;
+  sec%=60;
+  //fprintf(stderr,"%s: Duration %d ticks, about %d:%02d\n",ctx->srcpath,ctx->duration,min,sec);
+}
+
 /* Reencode file in memory.
  */
  
@@ -126,6 +170,8 @@ static int mid2bba(struct mid2bba_context *ctx) {
     }
   }
   if (mid2bba_flush_delay(ctx)<0) return -1;
+  
+  mid2bba_trim_edge_delays(ctx);
   
   return 0;
 }

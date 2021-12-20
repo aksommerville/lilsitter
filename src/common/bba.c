@@ -19,13 +19,19 @@ int8_t bba_synth_init(struct bba_synth *synth,uint32_t mainrate) {
 /* Update song.
  */
  
+static int newdelay=0;
+ 
 static inline void bba_song_update(struct bba_synth *synth) {
 
   if (!synth->song) return;
   if (synth->songdelay>0) {
+    if (!newdelay) {
+      newdelay=1;
+    }
     synth->songdelay--;
     return;
   }
+  newdelay=0;
   while (1) {
   
     // Repeat at end of song. But also flush state and finish the update.
