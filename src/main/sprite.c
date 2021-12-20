@@ -202,6 +202,8 @@ void spawn_sprites() {
             sprite->h=6;
             sprite->x=src[0]-8;
             sprite->y=src[1]-8;
+            sprite->vs8[4]=sprite->x;
+            sprite->vs8[5]=sprite->y;
             sprite->visible=1;
             sprite->physics=1;
             sprite->mobile=1;
@@ -764,10 +766,22 @@ static void update_crocbot(struct sprite *sprite) {
  * vs8[1]=dy
  * vs8[2]=still time
  * vs8[3]=counter for animation
+ * vs8[4]=track x
+ * vs8[5]=track y
  */
  
 static void update_platform(struct sprite *sprite) {
   sprite->vs8[3]++;
+  
+  // If I've been pushed off track, try to return.
+  if (sprite->vs8[1]) {
+    if (sprite->x<sprite->vs8[4]) sprite->x++;
+    else if (sprite->x>sprite->vs8[4]) sprite->x--;
+  }
+  if (sprite->vs8[0]) {
+    if (sprite->y<sprite->vs8[5]) sprite->y++;
+    else if (sprite->y>sprite->vs8[5]) sprite->y--;
+  }
 
   // Anything mobile resting on my head, move it too.
   // But use my physics-checked (dx,dy) instead of the optimistic (vs8[0,1]).
@@ -780,7 +794,7 @@ static void update_platform(struct sprite *sprite) {
       if (passenger->x>=sprite->x+sprite->w) continue;
       if (passenger->x+passenger->w<=sprite->x) continue;
       if (passenger->type==SPRITE_TYPE_PLATFORM) continue;
-      int8_t dy=passenger->y+passenger->h-sprite->y;
+      int8_t dy=passenger->y-passenger->dy+passenger->h-sprite->y;
       if ((dy<-1)||(dy>1)) continue;
       passenger->x+=sprite->dx;
       passenger->y+=sprite->dy;

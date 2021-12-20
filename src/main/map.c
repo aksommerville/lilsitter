@@ -76,7 +76,7 @@ uint8_t map_load(uint16_t id) {
   
   int32_t err=ma_file_read(map,sizeof(map),path,0);
   if (err<0) {
-    ma_log("Failed read file '%s' for map %d\n",path,id);
+    ma_log("Failed to read file '%s' for map %d\n",path,id);
     map[0]=MAP_CMD_EOF;  
     return 0;
   }

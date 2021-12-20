@@ -20,8 +20,9 @@ extern struct ma_font font_basic;
 #define SPLASH_LOSE      3
 #define SPLASH_ALLWIN    4
 
-#define AUTO_FAIL_TIME (15*60)
-#define AUTO_FAIL_WARN_TIME (10*60)
+// Try to keep (AUTO_FAIL_TIME-AUTO_FAIL_WARN_TIME) one less than a multiple of 16.
+#define AUTO_FAIL_TIME (16*60)
+#define AUTO_FAIL_WARN_TIME (10*60+7)
 
 static ma_pixel_t fb_storage[96*64];
 static struct ma_framebuffer fb={
@@ -124,11 +125,9 @@ static void render_scene(ma_pixel_t *v) {
     draw_sprites(&fb);
     
     if (idle_framec>=AUTO_FAIL_WARN_TIME) {
-      if (idle_framec&16) { // blink
-        char msg[32];
-        uint8_t msgc=snprintf(msg,sizeof(msg),"PRESS A KEY! %d",(AUTO_FAIL_TIME-idle_framec+30)/60);
-        ma_font_render(&fb,16,28,&font_basic,msg,msgc,(idle_framec&32)?0x00:0xff);
-      }
+      char msg[32];
+      uint8_t msgc=snprintf(msg,sizeof(msg),"PRESS A KEY! %d",(AUTO_FAIL_TIME-idle_framec+30)/60);
+      ma_font_render(&fb,16,28,&font_basic,msg,msgc,(idle_framec&16)?0x00:0xff);
     }
   }
 }
@@ -243,7 +242,7 @@ static void end_splash() {
     splash=0;
     level_time=0;
     map_draw(bgbits.v,fb.v);
-    ma_log("Begin map %05d\n",mapid);
+    //ma_log("Begin map %05d\n",mapid);
   }
 }
 

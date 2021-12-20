@@ -7,7 +7,7 @@ Carry the children to the goal and don't kill them.
 ## TODO
 
 - [x] Editor: Visual editing.
-- [ ] Final maps, say about fifty of them?
+- [x] Final maps, say about fifty of them? ...26, i'll call that done.
 - [x] Sound effects
 - [x] Music
 - [x] Different songs per map. (and not just cycling thru; make a new command for it)
@@ -46,3 +46,9 @@ Carry the children to the goal and don't kill them.
 - 006. Goa Shuffle: Play
 - 007. Mouse Mischief: Play
 
+## Dummy tileid
+
+80 turnip
+81 tomato
+82 pumpkin
+83 cabbage
