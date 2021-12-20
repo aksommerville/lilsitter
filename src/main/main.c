@@ -19,6 +19,9 @@ extern struct ma_font font_basic;
 #define SPLASH_LOSE      3
 #define SPLASH_ALLWIN    4
 
+#define AUTO_FAIL_TIME (15*60)
+#define AUTO_FAIL_WARN_TIME (10*60)
+
 static ma_pixel_t fb_storage[96*64];
 static struct ma_framebuffer fb={
   .w=96,
@@ -44,6 +47,7 @@ static uint8_t splash_selection=0; // SPLASH_* or zero if playing
 static uint8_t music_enable=1;
 static uint8_t songid=0;
 static uint16_t pvinput=0;
+static uint32_t idle_framec=0; // For timed auto-fail
 
 static uint8_t song[4096];
 static uint16_t songc=0;
@@ -115,6 +119,14 @@ static void render_scene(ma_pixel_t *v) {
   if (!splash) {
     map_update_gore(bgbits.v,fb.v);
     draw_sprites(&fb);
+    
+    if (idle_framec>=AUTO_FAIL_WARN_TIME) {
+      if (idle_framec&16) { // blink
+        char msg[32];
+        uint8_t msgc=snprintf(msg,sizeof(msg),"PRESS A KEY! %d",(AUTO_FAIL_TIME-idle_framec+30)/60);
+        ma_font_render(&fb,16,28,&font_basic,msg,msgc,(idle_framec&32)?0x00:0xff);
+      }
+    }
   }
 }
 
@@ -244,6 +256,12 @@ static void end_splash() {
  
 static void check_completion() {
 
+  // One new way to complete: Timed auto-fail.
+  if (idle_framec>=AUTO_FAIL_TIME) {
+    completion_status=-GAME_END_TIMEOUT;
+    return;
+  }
+
   uint8_t deadc=0,goalc=0,targetc=0,liveheroc=0;
   const struct sprite *sprite=spritev;
   uint8_t i=spritec;
@@ -328,6 +346,9 @@ static void win_level() {
  
 void loop() {
   uint16_t input=ma_update();
+  
+  if (input) idle_framec=0;
+  else idle_framec++;
   
   if (input!=pvinput) {
     if (splash&&(splash_selection==SPLASH_INTRO)) {

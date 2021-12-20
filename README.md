@@ -29,7 +29,7 @@ Carry the children to the goal and don't kill them.
 - [x] Ensure Susie starts travelling the direction she was facing, when tossed.
 - [x] Don't draw outline on GOAL SOLID if it touches the screen edge.
 - [x] Down-pickup while head covered should work (disable check)
-- [ ] Auto fail after say 15 seconds with no input -- NECESSARY! You might get in an impossible position
+- [x] Auto fail after say 15 seconds with no input -- NECESSARY! You might get in an impossible position
 - [ ] Air-jump while holding balloon, shouldn't be possible.
 - [ ] Can't win while holding balloon. Can we change that?
 - [ ] Maps aren't rebuilding when I change them.
