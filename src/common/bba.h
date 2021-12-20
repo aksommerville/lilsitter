@@ -95,6 +95,8 @@ struct bba_synth {
     uint16_t rate;
     struct bba_env_runner env;
     uint8_t chid,noteid; // noteid encoded format, not midi
+    int8_t shift;
+    uint8_t shiftc,shiftc0; // how many frames between increment/decrement of (rate)
   } voicev[BBA_VOICE_LIMIT];
   uint8_t voicec;
   
@@ -115,6 +117,7 @@ struct bba_synth {
     struct bba_env env;
     uint8_t shape;
     uint8_t note0;
+    int8_t shift;
   } channelv[BBA_CHANNEL_COUNT];
   
   int32_t lpv[BBA_LOWPASS_LENGTH];

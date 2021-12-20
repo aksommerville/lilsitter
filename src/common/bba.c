@@ -135,6 +135,19 @@ static inline int16_t bba_voice_update(struct bba_synth *synth,struct bba_voice 
   // Advance oscillator.
   voice->p+=voice->rate;
   
+  // Advance pitch shift.
+  if (voice->shift) {
+    if (voice->shiftc>1) {
+      voice->shiftc--;
+    } else if (voice->shift<0) {
+      if (voice->rate>1) voice->rate--;
+      voice->shiftc=voice->shiftc0;
+    } else {
+      if (voice->rate<0x8000) voice->rate++;
+      voice->shiftc=voice->shiftc0;
+    }
+  }
+  
   // Combine oscillator and envelope.
   switch (voice->shape) {
   
@@ -335,18 +348,6 @@ void bba_env_runner_init(struct bba_synth *synth,struct bba_env_runner *runner,s
  */
 
 void bba_env_default(struct bba_env *env,struct bba_synth *synth) {
-  /**
-  env->atktlo=0x20;
-  env->atkthi=0x05;
-  env->atkllo=0x40;
-  env->atklhi=0x80;
-  env->dectlo=0x18;
-  env->decthi=0x10;
-  env->decllo=0x10;
-  env->declhi=0x30;
-  env->rlstlo=0x10;
-  env->rlsthi=0x50;
-  /**/
   env->atktlo=0x10;
   env->atkthi=0x05;
   env->atkllo=0x40;
@@ -442,6 +443,12 @@ void bba_synth_note(struct bba_synth *synth,uint8_t chid,uint8_t noteid,uint8_t 
   voice->p=0;
   voice->rate=bba_synth_norm_rate_for_midi_note(synth,channel->note0+noteid);
   voice->shape=channel->shape;
+  if (voice->shift=channel->shift) {
+    voice->shiftc=voice->shift;
+    if (voice->shiftc<0) voice->shiftc=-voice->shiftc;
+    voice->shiftc=128-voice->shiftc;
+    voice->shiftc0=voice->shiftc;
+  }
   bba_env_runner_init(synth,&voice->env,&channel->env,velocity);
 }
 
@@ -455,6 +462,7 @@ void bba_synth_default_channels(struct bba_synth *synth) {
     bba_env_default(&channel->env,synth);
     channel->shape=BBA_VOICE_SHAPE_SAW;
     channel->note0=0x20;
+    channel->shift=0;
   }
 }
 
@@ -492,6 +500,9 @@ void bba_channel_set_property(struct bba_synth *synth,struct bba_channel *channe
     
     case 0x0c: channel->shape=v; break;
     case 0x0d: channel->note0=v; break;
+    
+    // Added for Lil Sitter. Backport to bb if it works out. TODO
+    case 0x0e: channel->shift=v; break;
     
   }
 }

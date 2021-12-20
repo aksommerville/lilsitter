@@ -8,7 +8,7 @@ Carry the children to the goal and don't kill them.
 
 - [x] Editor: Visual editing.
 - [ ] Final maps, say about fifty of them?
-- [ ] Sound effects
+- [x] Sound effects
 - [x] Music
 - [x] Different songs per map. (and not just cycling thru; make a new command for it)
 - [x] Hero: Arms and up/down feedback
@@ -33,6 +33,8 @@ Carry the children to the goal and don't kill them.
 - [x] Air-jump while holding balloon, shouldn't be possible.
 - [x] Can't win while holding balloon. Can we change that? ...yep
 - xxx Maps aren't rebuilding when I change them. ...that was just renaming, make got mixed up by the mtimes. no big deal
+- [ ] A few maps are too hard on the Tiny (easier with a joystick and huge screen). 13,15,19
+- [ ] Not able to jump from platform moving up.
 
 ## Songs
 

@@ -3,6 +3,7 @@
 #include "map.h"
 #include "sprite.h"
 #include "hiscore.h"
+#include "sound.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -62,7 +63,7 @@ static uint16_t failc=0; // Count of failures since the intro splash.
 /* Audio.
  */
 
-static struct bba_synth synth={0};
+struct bba_synth synth={0};
  
 int16_t audio_next() {
   return bba_synth_update(&synth);
@@ -96,6 +97,7 @@ static void set_song(uint8_t id) {
  */
  
 static void toggle_music() {
+  // Careful with the order here: Changing song will drop sound effects too.
   if (music_enable) {
     music_enable=0;
     bba_synth_play_song(&synth,0,0);
@@ -104,6 +106,7 @@ static void toggle_music() {
     music_enable=1;
     restart_music();
   }
+  sound_ui_toggle();
   // Redraw the "OFF", "ON" bit in bgbits. Cheat...
   if (splash&&(splash_selection==SPLASH_INTRO)) {
     ma_framebuffer_fill_rect(&bgbits,42,36,20,7,0xa4);
@@ -236,18 +239,11 @@ static void end_splash() {
   if (splash_selection==SPLASH_ALLWIN) {
     begin_splash(SPLASH_INTRO);
   } else {
-    //set_song(4);//TODO song per map
-    /*
-    switch (mapid%3) {
-      case 0: set_song(4); break;
-      case 1: set_song(6); break;
-      case 2: set_song(7); break;
-    }
-    */
     set_song(map_songid);
     splash=0;
     level_time=0;
     map_draw(bgbits.v,fb.v);
+    ma_log("Begin map %05d\n",mapid);
   }
 }
 
@@ -352,6 +348,7 @@ void loop() {
   
   if (input) idle_framec=0;
   else idle_framec++;
+  sound_frame();
   
   if (input!=pvinput) {
     if (splash&&(splash_selection==SPLASH_INTRO)) {
@@ -402,7 +399,7 @@ void setup() {
   srand(millis());
 
   begin_splash(SPLASH_INTRO);
-  mapid=0;
+  mapid=20;//XXX
   map_load(mapid);
   spawn_sprites();
 }

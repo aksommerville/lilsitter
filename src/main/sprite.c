@@ -1,6 +1,7 @@
 #include "multiarcade.h"
 #include "sprite.h"
 #include "map.h"
+#include "sound.h"
 
 extern struct ma_texture tex_sprites_00; // desmond...
 extern struct ma_texture tex_sprites_01;
@@ -289,6 +290,7 @@ static void kill_sprite(struct sprite *victim,struct sprite *assailant) {
     }
   }
   
+  sound_kill();
   if (sprite_produces_gore(victim)) {
     map_add_gore(victim->x,victim->y,victim->w,victim->h);
   }
@@ -377,6 +379,7 @@ static void pickup(struct sprite *sprite,uint16_t input) {
   }
   
   // Commit the change.
+  sound_pickup();
   pumpkin->visible=0;
   pumpkin->physics=0;
   sprite->vs8[4]=pumpkin-spritev;
@@ -416,9 +419,11 @@ static void toss(struct sprite *sprite,uint16_t input) {
   sprite->dy=0;
   
   if (input&MA_BUTTON_UP) {
+    sound_toss();
     pumpkin->y=sprite->y-pumpkin->h;
     pumpkin->autody=-10;
   } else if (input&MA_BUTTON_DOWN) {
+    sound_drop();
     sprite->y-=pumpkin->h;
     pumpkin->y=sprite->y+sprite->h;
   } else {
@@ -426,21 +431,29 @@ static void toss(struct sprite *sprite,uint16_t input) {
     if (sprite->xform&MA_XFORM_XREV) {
       pumpkin->x-=pumpkin->w;
       if (input&MA_BUTTON_LEFT) {
+        sound_toss();
         pumpkin->autodx=-10;
+      } else {
+        sound_drop();
       }
     } else {
       pumpkin->x+=sprite->w;
       if (input&MA_BUTTON_RIGHT) {
+        sound_toss();
         pumpkin->autodx=10;
+      } else {
+        sound_drop();
       }
     }
   }
 }
 
 /* Check foot neighbors.
+ * (type<0) for any. Otherwise that type must be the only one we touch.
  */
  
-static uint8_t sprite_is_grounded(const struct sprite *sprite) {
+static uint8_t sprite_is_grounded(const struct sprite *sprite,int8_t type) {
+  uint8_t result=0;
   uint8_t y=sprite->y+sprite->h;
   if (y>=64) return 1;
   const struct sprite *q=spritev;
@@ -452,9 +465,14 @@ static uint8_t sprite_is_grounded(const struct sprite *sprite) {
     if (dy>1) continue;
     if (q->x>=sprite->x+sprite->w) continue;
     if (q->x+q->w<=sprite->x) continue;
+    if (type>=0) {
+      if (q->type!=type) return 0;
+      result=1;
+      continue;
+    }
     return 1;
   }
-  return 0;
+  return result;
 }
 
 /* Update hero.
@@ -470,7 +488,7 @@ static void update_hero(struct sprite *sprite,uint16_t input) {
 
   // If carrying a balloon, float up every other frame. ("up", i mean cancel gravity)
   if ((sprite->vs8[0]&3)&&(sprite->vs8[4]>=0)&&(sprite->vs8[4]<spritec)&&(spritev[sprite->vs8[4]].type==SPRITE_TYPE_BALLOON)) {
-    if (!sprite_is_grounded(sprite)) {
+    if (!sprite_is_grounded(sprite,-1)) {
       sprite->y--;
     }
   }
@@ -503,10 +521,10 @@ static void update_hero(struct sprite *sprite,uint16_t input) {
   if (
     (input&MA_BUTTON_A)&&!(sprite->vs8[3]&MA_BUTTON_A)&&
     (input&MA_BUTTON_DOWN)&&
-    (sprite->constraint&SPRITE_CONSTRAINT_S)
+    (sprite->constraint&SPRITE_CONSTRAINT_S)&&
+    sprite_is_grounded(sprite,SPRITE_TYPE_ONEWAY)
   ) {
-    // Cheat her down one pixel. If we enter a solid, physics will correct it.
-    // But if it's a oneway, this will put us on the other side.
+    sound_jump_down();
     sprite->y++;
     sprite->pvy++;
     sprite->vs8[2]=0;
@@ -514,6 +532,7 @@ static void update_hero(struct sprite *sprite,uint16_t input) {
   // Regular jump.
   } else if (input&MA_BUTTON_A) {
     if (sprite->vs8[2]>0) {
+      if (sprite->vs8[2]==18) sound_jump();
       sprite->vs8[2]--;
       if (sprite->vs8[2]>10) sprite->y-=3;
       else if (sprite->vs8[2]>5) sprite->y-=2;
@@ -521,7 +540,7 @@ static void update_hero(struct sprite *sprite,uint16_t input) {
     }
   } else if (sprite->dy<0) {
     sprite->vs8[2]=0;
-  } else if (sprite_is_grounded(sprite)) {
+  } else if (sprite_is_grounded(sprite,-1)) {
     sprite->vs8[2]=18; // Jump power.
   } else {
     sprite->vs8[2]=0;
@@ -705,6 +724,7 @@ static void update_crocbot(struct sprite *sprite) {
       } break;
     case 2: {
         sprite->vs8[1]=3;
+        sound_crocbot_chomp();
       } break;
     case 3: {
         if (sprite->vs8[2]>0) {
