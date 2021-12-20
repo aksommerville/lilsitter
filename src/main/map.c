@@ -5,6 +5,8 @@
 
 uint8_t map[MAP_SIZE_LIMIT]={0};
 
+uint8_t map_songid=4;
+
 // We need to know this for gore tracking.
 static uint8_t bgcolor=0;
 
@@ -51,6 +53,7 @@ static void map_validate() {
       case MAP_CMD_PLATFORM: REQUIRE(3) break;
       case MAP_CMD_SHREDDER: REQUIRE(4) break;
       case MAP_CMD_BALLOON: REQUIRE(2) break;
+      case MAP_CMD_SONG: REQUIRE(1) map_songid=map[p-1]; break;
       default: {
           p--;
           ma_log("ERROR: Unknown map command 0x%02x. Terminating map at byte %d.\n",map[p],p);
@@ -263,6 +266,7 @@ void map_draw(uint8_t *dst,uint8_t *scratch) {
       case MAP_CMD_PLATFORM: src+=3; break;
       case MAP_CMD_SHREDDER: src+=4; break;
       case MAP_CMD_BALLOON: src+=2; break;
+      case MAP_CMD_SONG: src+=1; break;
       default: goto _done_;
     }
     goal=0;

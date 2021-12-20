@@ -237,11 +237,14 @@ static void end_splash() {
     begin_splash(SPLASH_INTRO);
   } else {
     //set_song(4);//TODO song per map
+    /*
     switch (mapid%3) {
       case 0: set_song(4); break;
       case 1: set_song(6); break;
       case 2: set_song(7); break;
     }
+    */
+    set_song(map_songid);
     splash=0;
     level_time=0;
     map_draw(bgbits.v,fb.v);

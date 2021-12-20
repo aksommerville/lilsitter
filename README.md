@@ -10,7 +10,7 @@ Carry the children to the goal and don't kill them.
 - [ ] Final maps, say about fifty of them?
 - [ ] Sound effects
 - [x] Music
-- [ ] Different songs per map. (and not just cycling thru; make a new command for it)
+- [x] Different songs per map. (and not just cycling thru; make a new command for it)
 - [x] Hero: Arms and up/down feedback
 - [x] Intro splash with high score and music toggle
 - [x] Timekeeping
@@ -30,9 +30,9 @@ Carry the children to the goal and don't kill them.
 - [x] Don't draw outline on GOAL SOLID if it touches the screen edge.
 - [x] Down-pickup while head covered should work (disable check)
 - [x] Auto fail after say 15 seconds with no input -- NECESSARY! You might get in an impossible position
-- [ ] Air-jump while holding balloon, shouldn't be possible.
-- [ ] Can't win while holding balloon. Can we change that?
-- [ ] Maps aren't rebuilding when I change them.
+- [x] Air-jump while holding balloon, shouldn't be possible.
+- [x] Can't win while holding balloon. Can we change that? ...yep
+- xxx Maps aren't rebuilding when I change them. ...that was just renaming, make got mixed up by the mtimes. no big deal
 
 ## Songs
 

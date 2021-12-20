@@ -19,6 +19,7 @@ export const COMMANDS = [
   ["PLATFORM","x","y","mode"],
   ["SHREDDER","x","y","orient","h"],
   ["BALLOON","x","y"],
+  ["SONG","songid"],
 ];
 
 export function isSpriteCommandName(name) {

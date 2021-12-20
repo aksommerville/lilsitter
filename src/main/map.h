@@ -32,6 +32,12 @@ extern uint8_t map[MAP_SIZE_LIMIT];
 #define MAP_CMD_PLATFORM       0x0d /* (u8 x,u8 y,u8 mode: (0,1,2)=(still,horz,vert)) */
 #define MAP_CMD_SHREDDER       0x0e /* (u8 x,u8 y,u8 orient: (0,1)=(left,right),u8 h) */
 #define MAP_CMD_BALLOON        0x0f /* (u8 x,u8 y) */
+#define MAP_CMD_SONG           0x10 /* (u8 songid) */
+
+/* Initially 4, and updates when we load.
+ * If the map didn't specify one, the previous value sticks.
+ */
+extern uint8_t map_songid;
 
 /* Map ids are sequential from zero, and the file name is derived from it.
  * Returns >0 if loaded, 0 if not found or malformed.

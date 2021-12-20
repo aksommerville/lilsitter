@@ -244,6 +244,8 @@ void spawn_sprites() {
           src+=2;
         } break;
         
+      case MAP_CMD_SONG: src+=1; break;
+        
       default: return;
     }
     goal=0;
@@ -435,21 +437,22 @@ static void toss(struct sprite *sprite,uint16_t input) {
   }
 }
 
-/* Am I standing on a platform?
- * That's a case where (dy) could be nonzero, but we'd still want to restore jump power.
+/* Check foot neighbors.
  */
  
-static uint8_t hero_foot_neighbor_is_platform(const struct sprite *sprite) {
+static uint8_t sprite_is_grounded(const struct sprite *sprite) {
   uint8_t y=sprite->y+sprite->h;
+  if (y>=64) return 1;
   const struct sprite *q=spritev;
   uint8_t i=spritec;
   for (;i-->0;q++) {
+    if (!q->physics) continue;
     int8_t dy=q->y-y;
     if (dy<-1) continue;
     if (dy>1) continue;
     if (q->x>=sprite->x+sprite->w) continue;
     if (q->x+q->w<=sprite->x) continue;
-    if (q->type==SPRITE_TYPE_PLATFORM) return 1;
+    return 1;
   }
   return 0;
 }
@@ -465,9 +468,11 @@ static uint8_t hero_foot_neighbor_is_platform(const struct sprite *sprite) {
  
 static void update_hero(struct sprite *sprite,uint16_t input) {
 
-  // If carrying a balloon, float up every other frame.
+  // If carrying a balloon, float up every other frame. ("up", i mean cancel gravity)
   if ((sprite->vs8[0]&3)&&(sprite->vs8[4]>=0)&&(sprite->vs8[4]<spritec)&&(spritev[sprite->vs8[4]].type==SPRITE_TYPE_BALLOON)) {
-    sprite->y--;
+    if (!sprite_is_grounded(sprite)) {
+      sprite->y--;
+    }
   }
 
   // Animate walking.
@@ -514,10 +519,12 @@ static void update_hero(struct sprite *sprite,uint16_t input) {
       else if (sprite->vs8[2]>5) sprite->y-=2;
       else sprite->y-=1; // -1 is effectively motionless
     }
-  } else if ((sprite->dy>0)&&!hero_foot_neighbor_is_platform(sprite)) {
+  } else if (sprite->dy<0) {
     sprite->vs8[2]=0;
-  } else {
+  } else if (sprite_is_grounded(sprite)) {
     sprite->vs8[2]=18; // Jump power.
+  } else {
+    sprite->vs8[2]=0;
   }
   
   // Pickup/toss?
