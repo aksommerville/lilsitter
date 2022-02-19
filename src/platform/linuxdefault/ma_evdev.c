@@ -27,6 +27,7 @@ struct ma_evdev {
   struct ma_evdev_device {
     int fd;
     int evno;
+    uint16_t vendor,product;
     uint16_t state;
     struct ma_evdev_axis {
       uint16_t code;
@@ -151,7 +152,7 @@ static int ma_evdev_device_add_axis(
   struct ma_evdev *evdev,
   struct ma_evdev_device *device,
   uint16_t code,
-  const struct input_absinfo *absinfo
+  struct input_absinfo *absinfo
 ) {
   
   if (device->axisc>=device->axisa) {
@@ -163,6 +164,24 @@ static int ma_evdev_device_add_axis(
     device->axisa=na;
   }
   struct ma_evdev_axis *axis=device->axisv+device->axisc;
+  
+  //fprintf(stderr,"  ABS %04x %d..%d =%d\n",code,absinfo->minimum,absinfo->maximum,absinfo->value);
+  
+  // 8BitDo Tech Co., Ltd. 8BitDo Zero 2 gamepad: D-pad is two 0..255 axes, but their initial value is always zero.
+  if ((device->vendor==0x2dc8)&&(device->product==0x9018)) {
+    switch (code) {
+      case 0: absinfo->value=128; break;
+      case 1: absinfo->value=128; break;
+    }
+  }
+  
+  // 8Bitdo  8BitDo M30 gamepad (Genesis like), same problem.
+  if ((device->vendor==0x2dc8)&&(device->product==0x5006)) {
+    switch (code) {
+      case 0: absinfo->value=128; break;
+      case 1: absinfo->value=128; break;
+    }
+  }
   
   // Resting value between limits exclusive? Call it two-way.
   if ((absinfo->value>absinfo->minimum)&&(absinfo->value<absinfo->maximum)) {
@@ -242,15 +261,19 @@ static int ma_evdev_try_file(struct ma_evdev *evdev,const char *base,int basec) 
   int grab=1;
   ioctl(fd,EVIOCGRAB,grab);
   
+  struct input_id id={0};
+  ioctl(fd,EVIOCGID,&id);
+  char name[64];
+  int namec=ioctl(fd,EVIOCGNAME(sizeof(name)),name);
+  if ((namec<0)||(namec>sizeof(name))) namec=0;
+  
   struct ma_evdev_device *device=ma_evdev_add_device(evdev,evno,fd);
   if (!device) {
     close(fd);
     return -1;
   }
-  
-  char name[64];
-  int namec=ioctl(fd,EVIOCGNAME(sizeof(name)),name);
-  if ((namec<0)||(namec>sizeof(name))) namec=0;
+  device->vendor=id.vendor;
+  device->product=id.product;
   
   uint8_t absbit[(ABS_CNT+7)>>3]={0};
   ioctl(fd,EVIOCGBIT(EV_ABS,sizeof(absbit)),absbit);
@@ -356,6 +379,70 @@ static struct ma_evdev_axis *ma_evdev_device_find_axis(
     else return axis;
   }
   return 0;
+}
+
+/* Hard-coded input mapping.
+ * This is obviously not ideal but whatever.
+ */
+ 
+#define MA_BUTTON_QUIT 0xff01
+
+static const struct ma_evdev_button_map {
+  uint16_t vendor;
+  uint16_t product;
+  uint16_t code;
+  uint16_t btnid;
+} ma_evdev_button_mapv[]={
+
+  // 'USB Gamepad ' (SNES knockoff)
+  {0x0079,0x0011,0x0120,MA_BUTTON_B}, // east (north naturally maps to A)
+  {0x0079,0x0011,0x0121,MA_BUTTON_A}, // south
+  {0x0079,0x0011,0x0123,MA_BUTTON_B}, // west
+  {0x0079,0x0011,0x0129,MA_BUTTON_QUIT}, // start
+  
+  // Microsoft X-Box 360 pad
+  {0x045e,0x028e,0x013c,MA_BUTTON_QUIT}, // heart
+  
+  // 8Bitdo  8BitDo M30 gamepad. (black) I'll leave C,Z reversed in case somebody likes it that way.
+  {0x2dc8,0x5006,0x0131,MA_BUTTON_A}, // B
+  {0x2dc8,0x5006,0x0134,MA_BUTTON_B}, // Y
+  {0x2dc8,0x5006,0x0130,MA_BUTTON_A}, // A
+  {0x2dc8,0x5006,0x0133,MA_BUTTON_B}, // X
+  {0x2dc8,0x5006,0x013b,MA_BUTTON_QUIT}, // start
+  
+  //2dc8:6001 '8Bitdo SF30 Pro   8Bitdo SN30 Pro' (gray)
+  {0x2dc8,0x6001,0x0131,MA_BUTTON_A}, // south
+  {0x2dc8,0x6001,0x0134,MA_BUTTON_B}, // west
+  {0x2dc8,0x6001,0x013e,MA_BUTTON_QUIT}, // right plunger
+
+  // 8BitDo Tech Co., Ltd. 8BitDo Zero 2 gamepad (pink)
+  {0x2dc8,0x9018,0x0131,MA_BUTTON_A}, // south
+  {0x2dc8,0x9018,0x0134,MA_BUTTON_B}, // west
+  {0x2dc8,0x9018,0x013b,MA_BUTTON_QUIT}, // start
+};
+ 
+static uint16_t ma_evdev_map_button(uint16_t vendor,uint16_t product,uint16_t code) {
+
+  // KEY codes below 256 are keyboard-related; those are handled separately.
+  if (code<0x100) return 0;
+  
+  // Look for hard-coded exceptions to the even/odd rule.
+  int lo=0,hi=sizeof(ma_evdev_button_mapv)/sizeof(struct ma_evdev_button_map);
+  while (lo<hi) {
+    int ck=(lo+hi)>>1;
+    const struct ma_evdev_button_map *map=ma_evdev_button_mapv+ck;
+         if (vendor<map->vendor) hi=ck;
+    else if (vendor>map->vendor) lo=ck+1;
+    else if (product<map->product) hi=ck;
+    else if (product>map->product) lo=ck+1;
+    else if (code<map->code) hi=ck;
+    else if (code>map->code) lo=ck+1;
+    else return map->btnid;
+  }
+  
+  // Finally, whatever, there's only two output buttons. Alternate even/odd.
+  if (code&1) return MA_BUTTON_B;
+  return MA_BUTTON_A;
 }
 
 /* Read device.
@@ -470,6 +557,8 @@ static int ma_evdev_event(
       } break;
       
     case EV_KEY: switch (event->code) {
+    
+        // If we encounter a USB keyboard (actually not likely), we don't need to care which vendor:
         case KEY_ESC: ma_ld_quit_requested=1; return 0;
         case KEY_UP: return ma_evdev_key(evdev,device,MA_BUTTON_UP,event->value);
         case KEY_DOWN: return ma_evdev_key(evdev,device,MA_BUTTON_DOWN,event->value);
@@ -477,9 +566,15 @@ static int ma_evdev_event(
         case KEY_RIGHT: return ma_evdev_key(evdev,device,MA_BUTTON_RIGHT,event->value);
         case KEY_Z: return ma_evdev_key(evdev,device,MA_BUTTON_A,event->value);
         case KEY_X: return ma_evdev_key(evdev,device,MA_BUTTON_B,event->value);
+        
         default: {
-            if (event->code<0x100) return 0;
-            return ma_evdev_key(evdev,device,(event->code&1)?MA_BUTTON_B:MA_BUTTON_A,event->value);
+            int btnid=ma_evdev_map_button(device->vendor,device->product,event->code);
+            if (!btnid) return 0;
+            if (btnid==MA_BUTTON_QUIT) {
+              if (event->value) ma_ld_quit_requested=1;
+              return 0;
+            }
+            return ma_evdev_key(evdev,device,btnid,event->value);
           }
       } break;
       

@@ -1,5 +1,7 @@
 #include "ma_drm_internal.h"
 #include <signal.h>
+#include <sys/poll.h>
+#include <unistd.h>
 
 /* Globals.
  */
@@ -131,6 +133,16 @@ static int ma_drm_update() {
   if (ma_drm_audio_locked) {
     if (ma_alsa_unlock(ma_alsa)>=0) ma_drm_audio_locked=0;
   }
+  
+  struct pollfd pollfd={.fd=STDIN_FILENO,.events=POLLIN};
+  if (poll(&pollfd,1,0)>0) {
+    char dummy[256];
+    if (read(STDIN_FILENO,dummy,sizeof(dummy))>0) {
+      // something arrived on stdin (meaning, user hit ENTER).
+      ma_drm_quit_requested=1;
+    }
+  }
+  
   if (ma_drm_quit_requested) return 0;
   return 1;
 }

@@ -6,36 +6,6 @@ Carry the children to the goal and don't kill them.
 
 ## TODO
 
-- [x] Editor: Visual editing.
-- [x] Final maps, say about fifty of them? ...26, i'll call that done.
-- [x] Sound effects
-- [x] Music
-- [x] Different songs per map. (and not just cycling thru; make a new command for it)
-- [x] Hero: Arms and up/down feedback
-- [x] Intro splash with high score and music toggle
-- [x] Timekeeping
-- [x] High score
-- [x] Nicer game over splashes, eg stats on Win.
-- [x] All-over splash
-- [x] Menu card
-- [x] More sprites:
-- - [x] Electric crocodile
-- - [x] Other kids? ...nah 2 is plenty
-- - [x] Moving platform
-- - [x] Some kind of horizontal hazard, for chimney edges
-- - [x] Balloon
-- [x] Editor: Maybe clean up the CSS just a little?
-- [x] make: Avoid mixing PNG and TSV splashes. Better strategy re data files (as opposed to embedded data)
-- [x] Ensure Susie starts travelling the direction she was facing, when tossed.
-- [x] Don't draw outline on GOAL SOLID if it touches the screen edge.
-- [x] Down-pickup while head covered should work (disable check)
-- [x] Auto fail after say 15 seconds with no input -- NECESSARY! You might get in an impossible position
-- [x] Air-jump while holding balloon, shouldn't be possible.
-- [x] Can't win while holding balloon. Can we change that? ...yep
-- xxx Maps aren't rebuilding when I change them. ...that was just renaming, make got mixed up by the mtimes. no big deal
-- [x] A few maps are too hard on the Tiny (easier with a joystick and huge screen). 13,15,19
-- [x] Not able to jump from platform moving up.
-
 ## Songs
 
 - 001. Susie's Lullabye: Intro
