@@ -13,8 +13,8 @@ ifndef MA_HOST
     else ifeq ($(UNAMEN),atarivcs)
       MA_HOST:=linuxdrm
     else ifeq ($(UNAMEN),gigglebyte)
-      MA_HOST:=gigglebyte
-      MA_BUILD_TINY:=
+      MA_HOST:=linuxdrm
+      MA_BUILD_TINY:=0
     else
       MA_HOST:=linuxdefault
     endif
@@ -33,6 +33,8 @@ endif
 
 ifndef MA_BUILD_TINY
   MA_BUILD_TINY:=1
+else ifeq ($(MA_BUILD_TINY),0)
+  MA_BUILD_TINY:=
 endif
 
 ifndef MA_BUILD_NATIVE

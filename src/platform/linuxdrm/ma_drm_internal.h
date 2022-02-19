@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 struct ma_drm;
-struct ma_pulse;
+struct ma_alsa;
 struct ma_evdev;
 
 extern struct ma_init_params ma_drm_init_params;
@@ -21,7 +21,7 @@ extern int ma_drm_frame_skipc;
 extern int ma_drm_framec;
 extern const char *ma_drm_file_sandbox;
 extern struct ma_drm *ma_drm;
-extern struct ma_pulse *ma_pulse;
+extern struct ma_alsa *ma_alsa;
 extern int ma_drm_audio_locked;
 extern struct ma_evdev *ma_evdev;
 
@@ -34,26 +34,24 @@ struct ma_drm *ma_drm_new(int fbw,int fbh);
 void ma_drm_del(struct ma_drm *drm);
 int ma_drm_swap(struct ma_drm *drm,const void *fb);
 
-/* PulseAudio
- * I've opted for Pulse, for 'linuxdefault'.
- * There's a basically-identical ALSA implementation in 'raspi', which should also work.
+/* ALSA.
  *************************************************************/
 
-struct ma_pulse *ma_pulse_new(
+struct ma_alsa *ma_alsa_new(
   int rate,int chanc,
-  void (*cb)(int16_t *dst,int dstc,struct ma_pulse *pulse),
+  void (*cb)(int16_t *dst,int dstc,struct ma_alsa *alsa),
   void *userdata
 );
 
-void ma_pulse_del(struct ma_pulse *pulse);
+void ma_alsa_del(struct ma_alsa *alsa);
 
-int ma_pulse_get_rate(const struct ma_pulse *pulse);
-int ma_pulse_get_chanc(const struct ma_pulse *pulse);
-void *ma_pulse_get_userdata(const struct ma_pulse *pulse);
-int ma_pulse_get_status(const struct ma_pulse *pulse); // 0,-1
+int ma_alsa_get_rate(const struct ma_alsa *alsa);
+int ma_alsa_get_chanc(const struct ma_alsa *alsa);
+void *ma_alsa_get_userdata(const struct ma_alsa *alsa);
+int ma_alsa_get_status(const struct ma_alsa *alsa); // 0,-1
 
-int ma_pulse_lock(struct ma_pulse *pulse);
-int ma_pulse_unlock(struct ma_pulse *pulse);
+int ma_alsa_lock(struct ma_alsa *alsa);
+int ma_alsa_unlock(struct ma_alsa *alsa);
 
 /* Evdev.
  **********************************************************/

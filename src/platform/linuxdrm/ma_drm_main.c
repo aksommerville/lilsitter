@@ -14,7 +14,7 @@ int ma_drm_frame_skipc=0;
 int ma_drm_framec=0;
 const char *ma_drm_file_sandbox=0;
 struct ma_drm *ma_drm=0;
-struct ma_pulse *ma_pulse=0;
+struct ma_alsa *ma_alsa=0;
 int ma_drm_audio_locked=0;
 struct ma_evdev *ma_evdev=0;
 
@@ -60,8 +60,8 @@ static void ma_drm_quit() {
     );
   }
   
-  ma_pulse_del(ma_pulse);
-  ma_pulse=0;
+  ma_alsa_del(ma_alsa);
+  ma_alsa=0;
   
   ma_drm_del(ma_drm);
   ma_drm=0;
@@ -129,7 +129,7 @@ static int ma_drm_update() {
   ma_drm_framec++;
   loop();
   if (ma_drm_audio_locked) {
-    if (ma_pulse_unlock(ma_pulse)>=0) ma_drm_audio_locked=0;
+    if (ma_alsa_unlock(ma_alsa)>=0) ma_drm_audio_locked=0;
   }
   if (ma_drm_quit_requested) return 0;
   return 1;

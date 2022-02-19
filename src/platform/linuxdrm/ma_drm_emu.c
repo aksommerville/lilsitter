@@ -34,8 +34,8 @@ void delay(uint32_t ms) {
 /* Audio callback.
  */
  
-static void ma_drm_cb_audio(int16_t *v,int c,struct ma_pulse *pulse) {
-  int chanc=ma_pulse_get_chanc(pulse);
+static void ma_drm_cb_audio(int16_t *v,int c,struct ma_alsa *alsa) {
+  int chanc=ma_alsa_get_chanc(alsa);
   if (chanc>1) {
     int framec=c/chanc;
     for (;framec-->0;) {
@@ -69,13 +69,13 @@ uint8_t ma_init(struct ma_init_params *params) {
   }
   
   if (ma_drm_init_params.audio_rate) {
-    if (!(ma_pulse=ma_pulse_new(
+    if (!(ma_alsa=ma_alsa_new(
       ma_drm_init_params.audio_rate,1,ma_drm_cb_audio,0
     ))) {
-      fprintf(stderr,"Failed to initialize PulseAudio at %d Hz. Proceeding without...\n",ma_drm_init_params.audio_rate);
+      fprintf(stderr,"Failed to initialize ALSA at %d Hz. Proceeding without...\n",ma_drm_init_params.audio_rate);
       ma_drm_init_params.audio_rate=0;
     } else {
-      ma_drm_init_params.audio_rate=ma_pulse_get_rate(ma_pulse);
+      ma_drm_init_params.audio_rate=ma_alsa_get_rate(ma_alsa);
     }
   }
   
@@ -117,8 +117,8 @@ uint16_t ma_update() {
    * We can't just wrap the call to loop(), since loop() calls ma_update() which is where we sleep (see just above).
    * So we lock it right here, then the outer layer, ma_drm_update() will unlock after loop() is done.
    */
-  if (ma_pulse&&!ma_drm_audio_locked) {
-    if (ma_pulse_lock(ma_pulse)>=0) ma_drm_audio_locked=1;
+  if (ma_alsa&&!ma_drm_audio_locked) {
+    if (ma_alsa_lock(ma_alsa)>=0) ma_drm_audio_locked=1;
   }
   
   return ma_drm_input;
