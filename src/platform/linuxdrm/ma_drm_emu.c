@@ -41,14 +41,11 @@ static void ma_drm_cb_audio(int16_t *v,int c,struct ma_alsa *alsa) {
     for (;framec-->0;) {
       int16_t sample=audio_next();
       int i=chanc;
-      for (;i-->0;v++) *v=i;
+      for (;i-->0;v++) *v=sample;
     }
   } else {
-    int16_t lo=0x7fff,hi=-0x8000;
     for (;c-->0;v++) {
       *v=audio_next();
-      if (*v<lo) lo=*v;
-      else if (*v>hi) hi=*v;
     }
   }
 }

@@ -88,7 +88,6 @@ static int ma_alsa_init(struct ma_alsa *alsa) {
 
   //TODO configurable ALSA device
   const char *device=MA_ALSA_DEVICE_NAME;
-  fprintf(stderr,"device: %s\n",device);
   
   if (
     (snd_pcm_open(&alsa->alsa,device,SND_PCM_STREAM_PLAYBACK,0)<0)||
@@ -97,7 +96,7 @@ static int ma_alsa_init(struct ma_alsa *alsa) {
     (snd_pcm_hw_params_set_access(alsa->alsa,alsa->hwparams,SND_PCM_ACCESS_RW_INTERLEAVED)<0)||
     (snd_pcm_hw_params_set_format(alsa->alsa,alsa->hwparams,SND_PCM_FORMAT_S16)<0)||
     (snd_pcm_hw_params_set_rate_near(alsa->alsa,alsa->hwparams,&alsa->rate,0)<0)||
-    (snd_pcm_hw_params_set_channels(alsa->alsa,alsa->hwparams,alsa->chanc)<0)||
+    (snd_pcm_hw_params_set_channels_near(alsa->alsa,alsa->hwparams,&alsa->chanc)<0)||
     (snd_pcm_hw_params_set_buffer_size(alsa->alsa,alsa->hwparams,ALSA_BUFFER_SIZE)<0)||
     (snd_pcm_hw_params(alsa->alsa,alsa->hwparams)<0)
   ) return -1;

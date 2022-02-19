@@ -381,16 +381,22 @@ void loop() {
 
 /* Setup.
  */
+ 
+#if MA_NON_TINY
+  #define AUDIO_RATE 44100
+#else
+  #define AUDIO_RATE 22050
+#endif
 
 void setup() {
 
-  bba_synth_init(&synth,22050);
+  bba_synth_init(&synth,AUDIO_RATE);
 
   struct ma_init_params params={
     .videow=fb.w,
     .videoh=fb.h,
     .rate=60,
-    .audio_rate=22050,
+    .audio_rate=AUDIO_RATE,
   };
   if (!ma_init(&params)) return;
   if ((params.videow!=fb.w)||(params.videoh!=fb.h)) return;
