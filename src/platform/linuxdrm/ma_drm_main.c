@@ -106,6 +106,11 @@ static int ma_drm_init(int argc,char **argv) {
     }
   }
   
+  if (!ma_drm_file_sandbox) {
+    ma_drm_file_sandbox="/home/kiddo/proj/lilsitter/out/data";
+    fprintf(stderr,"%s: Using default data directory '%s'\n",argv[0],ma_drm_file_sandbox);
+  }
+  
   if (ma_drm_use_signals) {
     signal(SIGINT,ma_drm_rcvsig);
   }
