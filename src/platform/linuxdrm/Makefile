@@ -2,8 +2,7 @@
 # Suitable for modern Linux systems, if there's no X server, eg Atari VCS.
 # I'm using PulseAudio initially for no particular reason. Consider copying ALSA from raspi if there's any problems.
 
-# 8 and 16 both good for pixelsize.
-_CCDEF:=-DMA_PIXELSIZE=16 -DMA_APP_NAME=\"$(PROJECT_NAME)\"
+_CCDEF:=-DMA_APP_NAME=\"$(PROJECT_NAME)\" -DMA_NON_TINY=1
 _CCINC:=-Isrc/platform/linuxdrm -Isrc/common -I/usr/include/libdrm
 _CCERR:=-Werror -Wimplicit
 
@@ -25,4 +24,4 @@ $(linuxdrm_MIDDIR)/%.o:src/%.c;$(PRECMD) $(linuxdrm_CC) -o $@ $<
 $(linuxdrm_MIDDIR)/data/%.o:mid/data/%.c;$(PRECMD) $(linuxdrm_CC) -o $@ $<
 
 $(linuxdrm_EXE):$(linuxdrm_OFILES);$(PRECMD) $(linuxdrm_LD) -o $@ $^ $(linuxdrm_LDPOST)
-
+RUNCMD=$< --files=out/data

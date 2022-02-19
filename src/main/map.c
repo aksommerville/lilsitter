@@ -1,5 +1,6 @@
 #include "map.h"
 #include "multiarcade.h"
+#include <stdio.h>
 
 #define GORE_LIMIT 128
 

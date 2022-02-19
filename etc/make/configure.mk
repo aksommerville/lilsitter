@@ -12,6 +12,9 @@ ifndef MA_HOST
       MA_HOST:=raspi
     else ifeq ($(UNAMEN),atarivcs)
       MA_HOST:=linuxdrm
+    else ifeq ($(UNAMEN),gigglebyte)
+      MA_HOST:=gigglebyte
+      MA_BUILD_TINY:=
     else
       MA_HOST:=linuxdefault
     endif

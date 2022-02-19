@@ -142,6 +142,7 @@ static int ma_drm_mangle_path(char *dst,int dsta,const char *src) {
   if (!src) return -1;
   while (*src=='/') src++;
   if (!*src) return -1;
+  if (!memcmp(src,"Sitter/",7)) src+=7;
   int dstc=snprintf(dst,dsta,"%s/%s",ma_drm_file_sandbox,src);
   if ((dstc<1)||(dstc>=dsta)) return -1;
   return dstc;
@@ -174,13 +175,34 @@ int32_t ma_file_read(void *dst,int32_t dsta,const char *tapath,int32_t seek) {
 /* Write file.
  */
  
-int32_t ma_file_write(const char *tapath,const void *src,int32_t srcc) {
+int32_t ma_file_write(const char *tapath,const void *src,int32_t srcc,int32_t seek) {
   if (!src||(srcc<0)) return -1;
   char path[1024];
   int pathc=ma_drm_mangle_path(path,sizeof(path),tapath);
   if ((pathc<1)||(pathc>=sizeof(path))) return -1;
-  int fd=open(path,O_WRONLY|O_CREAT|O_TRUNC,0666);
+  int fd=open(path,O_WRONLY|O_CREAT,0666);
   if (fd<0) return -1;
+  
+  if (seek) {
+    int p=lseek(fd,seek,SEEK_SET);
+    if (p<0) {
+      close(fd);
+      unlink(path);
+      return -1;
+    }
+    while (p<seek) {
+      char buf[256]={0};
+      int c=seek-p;
+      if (c>sizeof(buf)) c=sizeof(buf);
+      if (write(fd,buf,c)!=c) {
+        close(fd);
+        unlink(path);
+        return -1;
+      }
+      p+=c;
+    }
+  }
+  
   int32_t srcp=0;
   while (srcp<srcc) {
     int32_t err=write(fd,(char*)src+srcp,srcc-srcp);
