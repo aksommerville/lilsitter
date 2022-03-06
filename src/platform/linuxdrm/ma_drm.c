@@ -329,7 +329,12 @@ static int ma_drm_fb_init(struct ma_drm *drm,struct ma_drm_fb *fb) {
   }
   fb->handle=creq.handle;
   fb->size=creq.size;
-  drm->stridewords=creq.pitch/sizeof(ma_pixel_t);
+  drm->stridewords=creq.pitch;
+  #if MA_PIXELSIZE==8
+    drm->stridewords>>=2;
+  #else
+    drm->stridwords>>=1;
+  #endif
   
   if (drmModeAddFB(
     drm->fd,
