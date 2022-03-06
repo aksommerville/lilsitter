@@ -10,8 +10,9 @@ ifndef MA_HOST
     UNAMEN:=$(shell uname -n)
     ifeq ($(UNAMEN),raspberrypi)
       MA_HOST:=raspi
-    else ifeq ($(UNAMEN),atarivcs)
+    else ifeq ($(UNAMEN),vcs)
       MA_HOST:=linuxdrm
+      MA_BUILD_TINY:=0
     else ifeq ($(UNAMEN),gigglebyte)
       MA_HOST:=linuxdrm
       MA_BUILD_TINY:=0

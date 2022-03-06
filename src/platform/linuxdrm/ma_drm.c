@@ -32,6 +32,7 @@ struct ma_drm {
   int screenw,screenh; // screen size, also size of our framebuffers
   int dstx,dsty,dstw,dsth; // scale target within (screen)
   int scale; // 1..MA_DRM_SCALE_LIMIT; fbw*scale=dstw<=screenw
+  int stridewords;
   
   struct ma_drm_fb {
     uint32_t fbid;
@@ -328,6 +329,7 @@ static int ma_drm_fb_init(struct ma_drm *drm,struct ma_drm_fb *fb) {
   }
   fb->handle=creq.handle;
   fb->size=creq.size;
+  drm->stridewords=creq.pitch/sizeof(ma_pixel_t);
   
   if (drmModeAddFB(
     drm->fd,
@@ -464,7 +466,7 @@ struct ma_drm *ma_drm_new(int fbw,int fbh) {
  
 static void ma_drm_scale(struct ma_drm_fb *dst,struct ma_drm *drm,const ma_pixel_t *src) {
   ma_drm_pixel_t *dstrow=dst->v;
-  dstrow+=drm->dsty*drm->screenw+drm->dstx;
+  dstrow+=drm->dsty*drm->stridewords+drm->dstx;
   int cpc=drm->dstw*sizeof(ma_drm_pixel_t);
   const ma_pixel_t *srcrow=src;
   int yi=drm->fbh;
@@ -484,9 +486,9 @@ static void ma_drm_scale(struct ma_drm_fb *dst,struct ma_drm *drm,const ma_pixel
       for (;ri-->0;dstp++) *dstp=pixel;
     }
     dstp=dstrow;
-    dstrow+=drm->screenw;
+    dstrow+=drm->stridewords;
     int ri=drm->scale-1;
-    for (;ri-->0;dstrow+=drm->screenw) {
+    for (;ri-->0;dstrow+=drm->stridewords) {
       memcpy(dstrow,dstp,cpc);
     }
   }

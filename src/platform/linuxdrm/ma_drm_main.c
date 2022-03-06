@@ -107,7 +107,7 @@ static int ma_drm_init(int argc,char **argv) {
   }
   
   if (!ma_drm_file_sandbox) {
-    ma_drm_file_sandbox="/home/kiddo/proj/lilsitter/out/data";
+    ma_drm_file_sandbox="/home/andy/proj/lilsitter/out/data";//XXX get smarter
     fprintf(stderr,"%s: Using default data directory '%s'\n",argv[0],ma_drm_file_sandbox);
   }
   
