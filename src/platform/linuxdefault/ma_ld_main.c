@@ -110,6 +110,11 @@ static int ma_ld_init(int argc,char **argv) {
     }
   }
   
+  if (!ma_ld_file_sandbox) {
+    ma_ld_file_sandbox="/home/andy/proj/lilsitter/out/data";//XXX get smarter
+    fprintf(stderr,"%s: Using default data directory '%s'\n",argv[0],ma_ld_file_sandbox);
+  }
+  
   if (ma_ld_use_signals) {
     signal(SIGINT,ma_ld_rcvsig);
   }
