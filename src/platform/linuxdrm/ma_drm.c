@@ -373,11 +373,15 @@ static int ma_drm_fb_init(struct ma_drm *drm,struct ma_drm_fb *fb) {
  */
  
 static int ma_drm_calculate_output_bounds(struct ma_drm *drm) {
+
+  const int overscan=32;
+  int screenw=drm->screenw-overscan;
+  int screenh=drm->screenh-overscan;
   
   // Use the largest legal scale factor.
   // Too small is very unlikely -- our input is 96x64. So we're not going to handle that case, just fail.
-  int scalex=drm->screenw/drm->fbw;
-  int scaley=drm->screenh/drm->fbh;
+  int scalex=screenw/drm->fbw;
+  int scaley=screenh/drm->fbh;
   drm->scale=(scalex<scaley)?scalex:scaley;
   if (drm->scale<1) {
     fprintf(stderr,
@@ -392,6 +396,16 @@ static int ma_drm_calculate_output_bounds(struct ma_drm *drm) {
   drm->dsth=drm->scale*drm->fbh;
   drm->dstx=(drm->screenw>>1)-(drm->dstw>>1);
   drm->dsty=(drm->screenh>>1)-(drm->dsth>>1);
+
+  /**
+  fprintf(stderr,
+    "%s screen=(%d,%d) fb=(%d,%d) dst=(%d,%d,%d,%d)\n",
+    __func__,
+    drm->screenw,drm->screenh,
+    drm->fbw,drm->fbh,
+    drm->dstx,drm->dsty,drm->dstw,drm->dsth
+  );
+  /**/
   
   return 0;
 }
