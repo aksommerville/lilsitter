@@ -53,7 +53,7 @@ void bba_synth_play_song(struct bba_synth *synth,const void *v,uint16_t c);
 // Channel count must be 16; it's hard-wired in the protocols.
 #define BBA_CHANNEL_COUNT 16
 
-#define BBA_LOWPASS_LENGTH 3
+#define BBA_LOWPASS_LENGTH 1
 
 #define BBA_VOICE_SHAPE_SILENCE 0
 #define BBA_VOICE_SHAPE_SQUARE  1
