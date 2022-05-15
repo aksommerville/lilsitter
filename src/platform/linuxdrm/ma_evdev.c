@@ -1,4 +1,4 @@
-#include "ma_ld_internal.h"
+#include "ma_drm_internal.h"
 #include <fcntl.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -935,7 +935,7 @@ static int ma_evdev_event_unconfigured(
     case EV_KEY: switch (event->code) {
     
         // If we encounter a USB keyboard (actually not likely), we don't need to care which vendor:
-        case KEY_ESC: ma_ld_quit_requested=1; return 0;
+        case KEY_ESC: ma_drm_quit_requested=1; return 0;
         case KEY_UP: return ma_evdev_key(evdev,device,MA_BUTTON_UP,event->value);
         case KEY_DOWN: return ma_evdev_key(evdev,device,MA_BUTTON_DOWN,event->value);
         case KEY_LEFT: return ma_evdev_key(evdev,device,MA_BUTTON_LEFT,event->value);
@@ -947,7 +947,7 @@ static int ma_evdev_event_unconfigured(
             int btnid=ma_evdev_map_button(device->vendor,device->product,event->code);
             if (!btnid) return 0;
             if (btnid==MA_BUTTON_QUIT) {
-              if (event->value) ma_ld_quit_requested=1;
+              if (event->value) ma_drm_quit_requested=1;
               return 0;
             }
             return ma_evdev_key(evdev,device,btnid,event->value);
@@ -1006,7 +1006,7 @@ static int ma_evdev_event_configured(struct ma_evdev *evdev,struct ma_evdev_devi
       case MA_EVDEV_USAGE_DOWN: if (evdev->cb_button(evdev,MA_BUTTON_DOWN,dstvalue)<0) return -1; break;
       case MA_EVDEV_USAGE_A: if (evdev->cb_button(evdev,MA_BUTTON_A,dstvalue)<0) return -1; break;
       case MA_EVDEV_USAGE_B: if (evdev->cb_button(evdev,MA_BUTTON_B,dstvalue)<0) return -1; break;
-      case MA_EVDEV_USAGE_QUIT: if (dstvalue) ma_ld_quit_requested=1; break;
+      case MA_EVDEV_USAGE_QUIT: if (dstvalue) ma_drm_quit_requested=1; break;
     }
   }
   return 0;
