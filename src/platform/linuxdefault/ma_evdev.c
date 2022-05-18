@@ -342,6 +342,7 @@ static int ma_evdev_read_and_add_config(struct ma_evdev *evdev,const char *src,i
   while ((srcp<srcc)&&((unsigned char)src[srcp]<=0x20)) srcp++;
        if ((tokenc==1)&&!memcmp(token,"A",1)) usage=MA_EVDEV_USAGE_A;
   else if ((tokenc==1)&&!memcmp(token,"B",1)) usage=MA_EVDEV_USAGE_B;
+  else if ((tokenc==1)&&!memcmp(token,"C",1)) usage=MA_EVDEV_USAGE_B;
   else if ((tokenc==4)&&!memcmp(token,"LEFT",4)) usage=MA_EVDEV_USAGE_LEFT;
   else if ((tokenc==5)&&!memcmp(token,"RIGHT",5)) usage=MA_EVDEV_USAGE_RIGHT;
   else if ((tokenc==2)&&!memcmp(token,"UP",2)) usage=MA_EVDEV_USAGE_UP;
