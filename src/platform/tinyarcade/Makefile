@@ -9,7 +9,7 @@ ifndef MA_PORT
   MA_PORT:=ttyACM0
 endif
 ifndef MA_IDEROOT
-  MA_IDEROOT:=/opt/arduino-1.8.16
+  MA_IDEROOT:=/opt/arduino-1.8.19
 endif
 ifndef MA_IDEVERSION
   MA_IDEVERSION:=10816
