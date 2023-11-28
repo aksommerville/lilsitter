@@ -88,6 +88,8 @@ static int ma_ld_cb_close(struct ma_x11 *x11) {
 /* Initialize.
  */
  
+#define FULLSCREEN_INITIALLY 1
+ 
 static int ma_ld_init(int argc,char **argv) {
 
   int argp=1;
@@ -120,7 +122,7 @@ static int ma_ld_init(int argc,char **argv) {
   }
   
   if (!(ma_x11=ma_x11_new(
-    MA_APP_NAME,96,64,0,
+    MA_APP_NAME,96,64,FULLSCREEN_INITIALLY,
     ma_ld_cb_button,ma_ld_cb_close,0
   ))) return -1;
   
