@@ -6,17 +6,9 @@ _CCDEF:=-DMA_APP_NAME=\"$(PROJECT_NAME)\" -DMA_NON_TINY=1
 _CCINC:=-Isrc/platform/linuxdrm -Isrc/common -I/usr/include/libdrm
 _CCERR:=-Werror -Wimplicit
 
-ifeq ($(shell uname -n),gigglebyte)
-  _CCDEF+=-DMA_ALSA_DEVICE_NAME='"hw:0,3"'
-else ifeq ($(shell uname -n),vcs)
-  _CCDEF+=-DMA_ALSA_DEVICE_NAME='"hw:0,3"'
-else
-  _CCDEF+=-DMA_ALSA_DEVICE_NAME='"default"'
-endif
-
 linuxdrm_CC:=gcc -c -MMD -O2 $(_CCINC) $(_CCERR) $(_CCDEF)
 linuxdrm_LD:=gcc
-linuxdrm_LDPOST:=-lasound -lpthread -ldrm -lgbm
+linuxdrm_LDPOST:=-lasound -lpthread -ldrm -lgbm -lEGL -lGLESv2
 
 linuxdrm_MIDDIR:=mid/platform/linuxdrm
 linuxdrm_OUTDIR:=out/linuxdrm

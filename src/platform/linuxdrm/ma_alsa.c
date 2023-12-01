@@ -84,10 +84,7 @@ static void *ma_alsa_iothd(void *dummy) {
 /* Init.
  */
 
-static int ma_alsa_init(struct ma_alsa *alsa) {
-
-  //TODO configurable ALSA device
-  const char *device=MA_ALSA_DEVICE_NAME;
+static int ma_alsa_init(struct ma_alsa *alsa,const char *device) {
   
   if (
     (snd_pcm_open(&alsa->alsa,device,SND_PCM_STREAM_PLAYBACK,0)<0)||
@@ -119,6 +116,7 @@ static int ma_alsa_init(struct ma_alsa *alsa) {
 }
 
 struct ma_alsa *ma_alsa_new(
+  const char *device,
   int rate,int chanc,
   void (*cb)(int16_t *dst,int dstc,struct ma_alsa *alsa),
   void *userdata
@@ -130,8 +128,9 @@ struct ma_alsa *ma_alsa_new(
   alsa->chanc=chanc;
   alsa->cb=cb;
   alsa->userdata=userdata;
+  if (!device||!device[0]) device="default";
 
-  if (ma_alsa_init(alsa)<0) {
+  if (ma_alsa_init(alsa,device)<0) {
     ma_alsa_del(alsa);
     return 0;
   }

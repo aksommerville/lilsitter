@@ -62,12 +62,16 @@ uint8_t ma_init(struct ma_init_params *params) {
   } else {
     ma_drm_init_params.videow=96;
     ma_drm_init_params.videoh=64;
-    ma_drm_init_params.audio_rate=44100;
+    ma_drm_init_params.audio_rate=genioc_argv_get_int(ma_argc,ma_argv,"--audio-rate",44100);
   }
   
   if (ma_drm_init_params.audio_rate) {
     if (!(ma_alsa=ma_alsa_new(
-      ma_drm_init_params.audio_rate,1,ma_drm_cb_audio,0
+      genioc_argv_get_string(ma_argc,ma_argv,"--audio-device",0),
+      ma_drm_init_params.audio_rate,
+      genioc_argv_get_int(ma_argc,ma_argv,"--audio-chanc",1),
+      ma_drm_cb_audio,
+      0
     ))) {
       fprintf(stderr,"Failed to initialize ALSA at %d Hz. Proceeding without...\n",ma_drm_init_params.audio_rate);
       ma_drm_init_params.audio_rate=0;
@@ -125,7 +129,7 @@ uint16_t ma_update() {
  */
 
 void ma_send_framebuffer(const void *fb) {
-  if (ma_drm_swap(ma_drm,fb)<0) {
+  if (drmgx_swap(drmgx,fb)<0) {
     fprintf(stderr,"Failed to deliver video!\n");
     ma_drm_quit_requested=1;
   }

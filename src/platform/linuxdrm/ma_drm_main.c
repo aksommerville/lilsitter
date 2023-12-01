@@ -15,10 +15,12 @@ int64_t ma_drm_start_time=0;
 int ma_drm_frame_skipc=0;
 int ma_drm_framec=0;
 const char *ma_drm_file_sandbox=0;
-struct ma_drm *ma_drm=0;
+struct drmgx *drmgx=0;
 struct ma_alsa *ma_alsa=0;
 int ma_drm_audio_locked=0;
 struct ma_evdev *ma_evdev=0;
+int ma_argc=0;
+char **ma_argv=0;
 
 static volatile int ma_drm_sigc=0;
 
@@ -32,8 +34,49 @@ static void ma_drm_print_usage(const char *exename) {
     "OPTIONS:\n"
     "  --no-signals      Don't react to SIGINT.\n"
     "  --files=PATH      [] Let the app access files under the given directory.\n"
+    "  --video-device=PATH\n"
+    "  --video-rate=HZ\n"
+    "  --video-filter=INT\n"
+    "  --glsl-version=INT\n"
+    "  --audio-device=NAME\n"
+    "  --audio-rate=44100\n"
+    "  --audio-chanc=1\n"
     "\n"
   );
+}
+
+int genioc_argv_get_boolean(int argc,char **argv,const char *k) {
+  int p=1; for (;p<argc;p++) {
+    if (!strcmp(argv[p],k)) return 1;
+  }
+  return 0;
+}
+
+int genioc_argv_get_int(int argc,char **argv,const char *k,int fallback) {
+  int kc=0; while (k[kc]) kc++;
+  int p=1; for (;p<argc;p++) {
+    if (memcmp(argv[p],k,kc)) continue;
+    if (argv[p][kc]!='=') continue;
+    int v=0;
+    const char *src=argv[p]+kc+1;
+    for (;*src;src++) {
+      if ((*src<'0')||(*src>'9')) return fallback;
+      v*=10;
+      v+=(*src)-'0';
+    }
+    return v;
+  }
+  return fallback;
+}
+
+const char *genioc_argv_get_string(int argc,char **argv,const char *k,const char *fallback) {
+  int kc=0; while (k[kc]) kc++;
+  int p=1; for (;p<argc;p++) {
+    if (memcmp(argv[p],k,kc)) continue;
+    if (argv[p][kc]!='=') continue;
+    return argv[p]+kc+1;
+  }
+  return fallback;
 }
 
 /* Signal handler.
@@ -65,8 +108,8 @@ static void ma_drm_quit() {
   ma_alsa_del(ma_alsa);
   ma_alsa=0;
   
-  ma_drm_del(ma_drm);
-  ma_drm=0;
+  drmgx_del(drmgx);
+  drmgx=0;
   
   ma_evdev_del(ma_evdev);
   ma_evdev=0;
@@ -86,25 +129,14 @@ static int ma_drm_cb_button(struct ma_evdev *evdev,uint16_t btnid,int value) {
  
 static int ma_drm_init(int argc,char **argv) {
 
-  int argp=1;
-  while (argp<argc) {
-    const char *arg=argv[argp++];
-    
-    if (!strcmp(arg,"--help")) {
-      ma_drm_print_usage(argv[0]);
-      return -1;
-      
-    } else if (!strcmp(arg,"--no-signals")) {
-      ma_drm_use_signals=0;
-      
-    } else if (!memcmp(arg,"--files=",8)) {
-      ma_drm_file_sandbox=arg+8;
-      
-    } else {
-      fprintf(stderr,"%s: Unexpected argument '%s'\n",argv[0],arg);
-      return -1;
-    }
+  ma_argc=argc;
+  ma_argv=argv;
+  if (genioc_argv_get_boolean(argc,argv,"--help")) {
+    ma_drm_print_usage(argv[0]);
+    return -1;
   }
+  if (genioc_argv_get_boolean(argc,argv,"--no-signals")) ma_drm_use_signals=0;
+  ma_drm_file_sandbox=genioc_argv_get_string(argc,argv,"--files","/home/andy/proj/lilsitter/out/data");//TODO better to derive from argv[0] if possible?
   
   if (!ma_drm_file_sandbox) {
     ma_drm_file_sandbox="/home/andy/proj/lilsitter/out/data";//XXX get smarter
@@ -115,7 +147,13 @@ static int ma_drm_init(int argc,char **argv) {
     signal(SIGINT,ma_drm_rcvsig);
   }
   
-  if (!(ma_drm=ma_drm_new(96,64))) return -1;
+  if (!(drmgx=drmgx_new(
+    genioc_argv_get_string(argc,argv,"--video-device",0),
+    genioc_argv_get_int(argc,argv,"--video-rate",60),
+    96,64,DRMGX_FMT_TINY8,
+    genioc_argv_get_int(argc,argv,"--video-filter",0),
+    genioc_argv_get_int(argc,argv,"--glsl-version",0)
+  ))) return -1;
   
   if (!(ma_evdev=ma_evdev_new((void*)ma_drm_cb_button,0))) {
     fprintf(stderr,"Failed to initialize evdev (joysticks). Proceeding without...\n");
