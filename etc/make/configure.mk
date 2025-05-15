@@ -20,8 +20,13 @@ ifndef MA_HOST
     else ifneq (,$(strip $(filter gigglebyte,$(UNAMENM))))
       MA_HOST:=linuxdrm
       MA_BUILD_TINY:=0
+    else ifneq (,$(strip $(filter contop%,$(UNAMENM))))
+      MA_HOST:=linuxdrm
+      MA_BUILD_TINY:=0
     else
       MA_HOST:=linuxdefault
+# 2025-05-15: My Nuc isn't configured to build this anymore, and I don't expect to need new Tiny builds.
+      MA_BUILD_TINY:=0
     endif
   else ifeq ($(UNAMES),Darwin)
     MA_HOST:=macos
